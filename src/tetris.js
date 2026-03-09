@@ -1,0 +1,1089 @@
+/* ========================================
+   TETRIS - Script principal complet
+   
+   Fonctionnalités :
+   - 10 niveaux avec vitesse progressive
+   - Score Standard Tetris
+   - 5 meilleurs scores sauvegardés
+   - Auto-répétition des touches (DAS/ARR)
+   - Touches reconfigurables
+   - Système audio (préparé)
+   - Menus : Accueil, Pause, Options, Aide
+   ======================================== */
+
+// Les constantes CONFIG, COLORS, TETROMINOS, DEFAULT_OPTIONS et KEY_NAMES sont dans js/config.js
+
+// ===========================================
+// ÉTAT DU JEU
+// ===========================================
+
+let canvas, ctx, nextCanvas, nextCtx;
+let arena = [];
+let currentPiece = null;
+let nextPiece = null;
+let tetrominoSequence = [];
+let gameRunning = false;
+let gamePaused = false;
+let gameOver = false;
+let animationId = null;
+
+// Statistiques
+let gameStats = {
+  score: 0,
+  level: 1,
+  lines: 0,
+  startLevel: 1
+};
+
+// Options actuelles
+let options = JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
+
+// État des menus
+let currentMenu = 'accueil'; // 'accueil', 'pause', 'options', 'aide'
+let previousMenu = null;
+let waitingForKey = null; // Action en attente de nouvelle touche
+
+// Timing pour la chute
+let dropCounter = 0;
+let lastTime = 0;
+
+// Auto-répétition (DAS/ARR)
+let keysPressed = {};
+let dasTimers = {};
+let arrIntervals = {};
+
+// Audio
+let audioMuted = false;
+
+// ===========================================
+// FONCTIONS UTILITAIRES
+// ===========================================
+
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function formatNumber(num) {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function getKeyDisplayName(key) {
+  return KEY_NAMES[key] || (key.length === 1 ? key.toUpperCase() : key);
+}
+
+function getDropInterval(level) {
+  return Math.max(100, CONFIG.BASE_DROP_INTERVAL / (1 + (level - 1) * 0.5));
+}
+
+function getCellSize(canv) {
+  return (canv || canvas).width / CONFIG.ARENA_WIDTH;
+}
+
+// ===========================================
+// GESTION DES OPTIONS
+// ===========================================
+
+function loadOptions() {
+  const saved = localStorage.getItem('tetrisOptions');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      options = { ...DEFAULT_OPTIONS, ...parsed };
+      // S'assurer que keys existe
+      options.keys = { ...DEFAULT_OPTIONS.keys, ...parsed.keys };
+    } catch (e) {
+      options = JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
+    }
+  }
+  updateOptionsDisplay();
+}
+
+function saveOptions() {
+  localStorage.setItem('tetrisOptions', JSON.stringify(options));
+}
+
+function resetOptions() {
+  options = JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
+  saveOptions();
+  updateOptionsDisplay();
+}
+
+function updateOptionsDisplay() {
+  // Afficher les touches
+  for (const action of ['moveLeft', 'moveRight', 'rotate', 'softDrop', 'hardDrop']) {
+    const btn = document.getElementById(`key-${action}`);
+    if (btn) {
+      btn.textContent = getKeyDisplayName(options.keys[action]);
+    }
+  }
+  
+  // Afficher les valeurs numériques
+  document.getElementById('dasDelay-value').textContent = `${options.dasDelay} ms`;
+  document.getElementById('arrSpeed-value').textContent = `${options.arrSpeed} ms`;
+  document.getElementById('sfxVolume-value').textContent = `${options.sfxVolume}%`;
+  document.getElementById('musicVolume-value').textContent = `${options.musicVolume}%`;
+  document.getElementById('musicType-value').textContent = `TYPE ${options.musicType}`;
+}
+
+function adjustOption(target, direction) {
+  const dir = parseInt(direction);
+  
+  switch (target) {
+    case 'dasDelay':
+      options.dasDelay = Math.max(50, Math.min(300, options.dasDelay + dir * 10));
+      break;
+    case 'arrSpeed':
+      options.arrSpeed = Math.max(10, Math.min(100, options.arrSpeed + dir * 5));
+      break;
+    case 'sfxVolume':
+      options.sfxVolume = Math.max(0, Math.min(100, options.sfxVolume + dir * 10));
+      break;
+    case 'musicVolume':
+      options.musicVolume = Math.max(0, Math.min(100, options.musicVolume + dir * 10));
+      break;
+    case 'musicType':
+      options.musicType = Math.max(1, Math.min(3, options.musicType + dir));
+      break;
+  }
+  
+  saveOptions();
+  updateOptionsDisplay();
+}
+
+// ===========================================
+// GESTION DES HIGH SCORES
+// ===========================================
+
+function loadHighScores() {
+  const saved = localStorage.getItem('tetrisHighScores');
+  return saved ? JSON.parse(saved) : [];
+}
+
+function saveHighScore(score) {
+  const scores = loadHighScores();
+  scores.push(score);
+  scores.sort((a, b) => b - a);
+  const topScores = scores.slice(0, CONFIG.MAX_HIGH_SCORES);
+  localStorage.setItem('tetrisHighScores', JSON.stringify(topScores));
+  return topScores;
+}
+
+function resetHighScores() {
+  localStorage.removeItem('tetrisHighScores');
+  displayHighScores();
+}
+
+function displayHighScores() {
+  const scores = loadHighScores();
+  const container = document.getElementById('high-scores-list');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  for (let i = 0; i < CONFIG.MAX_HIGH_SCORES; i++) {
+    const entry = document.createElement('div');
+    entry.className = 'score-entry';
+    entry.textContent = scores[i] ? formatNumber(scores[i]) : '---';
+    container.appendChild(entry);
+  }
+}
+
+// ===========================================
+// GESTION DES MENUS
+// ===========================================
+
+function showMenu(menuName) {
+  // Cacher tous les menus
+  document.getElementById('menu-accueil').classList.add('hidden');
+  document.getElementById('menu-pause').classList.add('hidden');
+  document.getElementById('menu-aide').classList.add('hidden');
+  document.getElementById('menu-options').classList.add('hidden');
+  
+  // Afficher le menu demandé
+  document.getElementById(`menu-${menuName}`).classList.remove('hidden');
+  currentMenu = menuName;
+}
+
+function showPreviousMenu() {
+  if (previousMenu) {
+    showMenu(previousMenu);
+    previousMenu = null;
+  } else if (gameRunning && !gameOver) {
+    showMenu('pause');
+  } else {
+    showMenu('accueil');
+  }
+}
+
+// ===========================================
+// GESTION DU TERRAIN
+// ===========================================
+
+function createArena() {
+  arena = [];
+  for (let i = 0; i < CONFIG.ARENA_HEIGHT; i++) {
+    arena.push(new Array(CONFIG.ARENA_WIDTH).fill(0));
+  }
+}
+
+// ===========================================
+// GESTION DES TÉTROMINOS
+// ===========================================
+
+function generateSequence() {
+  const pieces = ['I', 'J', 'L', 'O', 'S', 'T', 'Z'];
+  while (pieces.length) {
+    const idx = getRandomInt(0, pieces.length - 1);
+    tetrominoSequence.push(pieces.splice(idx, 1)[0]);
+  }
+}
+
+function getNextTetromino() {
+  if (tetrominoSequence.length < 2) {
+    generateSequence();
+  }
+  
+  const name = tetrominoSequence.pop();
+  const matrix = TETROMINOS[name].map(row => [...row]);
+  const col = Math.floor(CONFIG.ARENA_WIDTH / 2) - Math.ceil(matrix[0].length / 2);
+  
+  // Calculer le nombre de lignes vides en haut de la matrice
+  let emptyRows = 0;
+  for (let r = 0; r < matrix.length; r++) {
+    if (matrix[r].every(cell => cell === 0)) {
+      emptyRows++;
+    } else {
+      break;
+    }
+  }
+  const row = -emptyRows;
+  
+  return { name, matrix, row, col, rotationState: 0 };
+}
+
+function rotateMatrix(matrix) {
+  const N = matrix.length - 1;
+  return matrix.map((row, i) => row.map((_, j) => matrix[N - j][i]));
+}
+
+// ===========================================
+// COLLISIONS
+// ===========================================
+
+function isValidMove(matrix, pieceRow, pieceCol) {
+  for (let row = 0; row < matrix.length; row++) {
+    for (let col = 0; col < matrix[row].length; col++) {
+      if (matrix[row][col]) {
+        const newRow = pieceRow + row;
+        const newCol = pieceCol + col;
+        
+        if (newCol < 0 || newCol >= CONFIG.ARENA_WIDTH || newRow >= CONFIG.ARENA_HEIGHT) {
+          return false;
+        }
+        if (newRow >= 0 && arena[newRow][newCol]) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+// ===========================================
+// ACTIONS DU JEU
+// ===========================================
+
+function movePiece(direction) {
+  if (!gameRunning || gamePaused || gameOver) return;
+  
+  const newCol = currentPiece.col + direction;
+  if (isValidMove(currentPiece.matrix, currentPiece.row, newCol)) {
+    currentPiece.col = newCol;
+    // playSound('move');
+  }
+}
+
+function rotatePiece() {
+  if (!gameRunning || gamePaused || gameOver) return;
+  
+  // O ne tourne pas
+  if (currentPiece.name === 'O') return;
+  
+  // S, Z, I : seulement 2 états (0 et 1)
+  const hasTwoStates = ['S', 'Z', 'I'].includes(currentPiece.name);
+  if (hasTwoStates && currentPiece.rotationState === 1) {
+    // Retourner à l'état initial (rotation inverse)
+    const rotated = rotateMatrix(rotateMatrix(rotateMatrix(currentPiece.matrix)));
+    if (isValidMove(rotated, currentPiece.row, currentPiece.col)) {
+      currentPiece.matrix = rotated;
+      currentPiece.rotationState = 0;
+      // playSound('rotate');
+      return;
+    }
+    // Wall kick pour rotation inverse
+    for (const kick of [-1, 1, -2, 2]) {
+      if (isValidMove(rotated, currentPiece.row, currentPiece.col + kick)) {
+        currentPiece.matrix = rotated;
+        currentPiece.col += kick;
+        currentPiece.rotationState = 0;
+        // playSound('rotate');
+        return;
+      }
+    }
+    return;
+  }
+  
+  const rotated = rotateMatrix(currentPiece.matrix);
+  
+  if (isValidMove(rotated, currentPiece.row, currentPiece.col)) {
+    currentPiece.matrix = rotated;
+    if (hasTwoStates) {
+      currentPiece.rotationState = 1;
+    } else {
+      currentPiece.rotationState = (currentPiece.rotationState + 1) % 4;
+    }
+    // playSound('rotate');
+    return;
+  }
+  
+  // Wall kick
+  for (const kick of [-1, 1, -2, 2]) {
+    if (isValidMove(rotated, currentPiece.row, currentPiece.col + kick)) {
+      currentPiece.matrix = rotated;
+      currentPiece.col += kick;
+      if (hasTwoStates) {
+        currentPiece.rotationState = 1;
+      } else {
+        currentPiece.rotationState = (currentPiece.rotationState + 1) % 4;
+      }
+      // playSound('rotate');
+      return;
+    }
+  }
+}
+
+function softDrop() {
+  if (!gameRunning || gamePaused || gameOver) return;
+  
+  const newRow = currentPiece.row + 1;
+  if (isValidMove(currentPiece.matrix, newRow, currentPiece.col)) {
+    currentPiece.row = newRow;
+    dropCounter = 0;
+  } else {
+    placePiece();
+  }
+}
+
+function hardDrop() {
+  if (!gameRunning || gamePaused || gameOver) return;
+  
+  while (isValidMove(currentPiece.matrix, currentPiece.row + 1, currentPiece.col)) {
+    currentPiece.row++;
+  }
+  placePiece();
+  // playSound('drop');
+}
+
+function placePiece() {
+  for (let row = 0; row < currentPiece.matrix.length; row++) {
+    for (let col = 0; col < currentPiece.matrix[row].length; col++) {
+      if (currentPiece.matrix[row][col]) {
+        const arenaRow = currentPiece.row + row;
+        if (arenaRow < 0) {
+          return triggerGameOver();
+        }
+        arena[arenaRow][currentPiece.col + col] = currentPiece.name;
+      }
+    }
+  }
+  
+  const linesCleared = clearLines();
+  if (linesCleared > 0) {
+    updateScore(linesCleared);
+  }
+  
+  // Prochaine pièce
+  currentPiece = nextPiece;
+  nextPiece = getNextTetromino();
+  drawNextPiece();
+  
+  if (!isValidMove(currentPiece.matrix, currentPiece.row, currentPiece.col)) {
+    triggerGameOver();
+  }
+}
+
+function clearLines() {
+  let linesCleared = 0;
+  
+  for (let row = CONFIG.ARENA_HEIGHT - 1; row >= 0;) {
+    if (arena[row].every(cell => cell !== 0)) {
+      arena.splice(row, 1);
+      arena.unshift(new Array(CONFIG.ARENA_WIDTH).fill(0));
+      linesCleared++;
+    } else {
+      row--;
+    }
+  }
+  
+  if (linesCleared > 0) {
+    // playSound(linesCleared === 4 ? 'tetris' : 'clear');
+  }
+  
+  return linesCleared;
+}
+
+function updateScore(linesCleared) {
+  const points = (CONFIG.SCORE_TABLE[linesCleared] || 0) * gameStats.level;
+  gameStats.score += points;
+  gameStats.lines += linesCleared;
+  
+  const newLevel = gameStats.startLevel + Math.floor(gameStats.lines / CONFIG.LINES_PER_LEVEL);
+  if (newLevel > gameStats.level && newLevel <= CONFIG.MAX_LEVEL) {
+    gameStats.level = newLevel;
+    // playSound('levelUp');
+  }
+  
+  updateDisplay();
+}
+
+// ===========================================
+// RENDU GRAPHIQUE
+// ===========================================
+
+// Pattern de fond rayé (créé une seule fois)
+let bgPattern = null;
+
+function createBgPattern() {
+  const patternCanvas = document.createElement('canvas');
+  const patternCtx = patternCanvas.getContext('2d');
+  const cellSize = getCellSize();
+  const stripeWidth = Math.max(1, Math.round(cellSize * CONFIG.STRIPE_PCT / 100));
+  const patternSize = stripeWidth * 2;
+  
+  patternCanvas.width = patternSize;
+  patternCanvas.height = patternSize;
+  
+  // Couleurs des rayures
+  const color1 = '#cfd8e6'; // Plus clair
+  const color2 = '#c3cfe0'; // Plus foncé
+  
+  // Dessiner pixel par pixel pour un motif diagonal parfaitement seamless
+  const imageData = patternCtx.createImageData(patternSize, patternSize);
+  const data = imageData.data;
+  
+  // Convertir les couleurs hex en RGB
+  const rgb1 = { r: 207, g: 216, b: 230 }; // #cfd8e6
+  const rgb2 = { r: 195, g: 207, b: 224 }; // #c3cfe0
+  
+  for (let y = 0; y < patternSize; y++) {
+    for (let x = 0; x < patternSize; x++) {
+      const index = (y * patternSize + x) * 4;
+      // Rayures diagonales à 45° : utiliser (x + y) modulo taille du motif
+      const rgb = ((x + y) % patternSize) < stripeWidth ? rgb1 : rgb2;
+      data[index] = rgb.r;
+      data[index + 1] = rgb.g;
+      data[index + 2] = rgb.b;
+      data[index + 3] = 255;
+    }
+  }
+  
+  patternCtx.putImageData(imageData, 0, 0);
+  
+  return ctx.createPattern(patternCanvas, 'repeat');
+}
+
+function draw() {
+  // Créer le pattern si pas encore fait
+  if (!bgPattern) {
+    bgPattern = createBgPattern();
+  }
+  
+  // Fond rayé
+  ctx.fillStyle = bgPattern;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Terrain
+  for (let row = 0; row < CONFIG.ARENA_HEIGHT; row++) {
+    for (let col = 0; col < CONFIG.ARENA_WIDTH; col++) {
+      if (arena[row][col]) {
+        const cellType = arena[row][col];
+        const neighbors = {
+          top:    row > 0 && arena[row - 1][col] !== 0,
+          bottom: row < CONFIG.ARENA_HEIGHT - 1 && arena[row + 1][col] !== 0,
+          left:   col > 0 && arena[row][col - 1] !== 0,
+          right:  col < CONFIG.ARENA_WIDTH - 1 && arena[row][col + 1] !== 0
+        };
+        drawCell(ctx, col, row, COLORS[cellType], neighbors);
+      }
+    }
+  }
+  
+  // Pièce actuelle
+  if (currentPiece && !gamePaused) {
+    drawPiece(ctx, currentPiece.matrix, currentPiece.col, currentPiece.row, COLORS[currentPiece.name]);
+  }
+}
+
+function drawCell(context, col, row, color, neighbors) {
+  const cellSize = getCellSize();
+  const x = col * cellSize;
+  const y = row * cellSize;
+  const size = cellSize;
+  const n = neighbors || { top: false, right: false, bottom: false, left: false };
+  
+  // Bordure calculée depuis BORDER_SIZE (% de la taille d'une cellule)
+  const fullBorder = Math.round(cellSize * CONFIG.BORDER_SIZE / 100);
+  const halfBorder = Math.round(fullBorder / 2);
+  const bTop    = n.top    ? halfBorder : fullBorder;
+  const bRight  = n.right  ? halfBorder : fullBorder;
+  const bBottom = n.bottom ? halfBorder : fullBorder;
+  const bLeft   = n.left   ? halfBorder : fullBorder;
+  const bevel = Math.round(cellSize * CONFIG.BEVEL_PCT / 100);
+  
+  // Coordonnées internes (zone colorée)
+  const ix = x + bLeft;
+  const iy = y + bTop;
+  const iw = size - bLeft - bRight;
+  const ih = size - bTop - bBottom;
+  
+  // Contour noir
+  context.fillStyle = '#000000';
+  context.fillRect(x, y, size, size);
+  
+  // Cellule colorée avec marge pour le contour
+  context.fillStyle = color;
+  context.fillRect(ix, iy, iw, ih);
+  
+  // Effet 3D - bord clair en haut (trapèze)
+  context.fillStyle = 'rgba(255,255,255,0.35)';
+  context.beginPath();
+  context.moveTo(ix, iy);
+  context.lineTo(ix + iw, iy);
+  context.lineTo(ix + iw - bevel, iy + bevel);
+  context.lineTo(ix + bevel, iy + bevel);
+  context.closePath();
+  context.fill();
+  
+  // Effet 3D - bord clair à droite (trapèze)
+  context.beginPath();
+  context.moveTo(ix + iw, iy);
+  context.lineTo(ix + iw, iy + ih);
+  context.lineTo(ix + iw - bevel, iy + ih - bevel);
+  context.lineTo(ix + iw - bevel, iy + bevel);
+  context.closePath();
+  context.fill();
+  
+  // Effet 3D - bord sombre en bas (trapèze)
+  context.fillStyle = 'rgba(0,0,0,0.25)';
+  context.beginPath();
+  context.moveTo(ix + iw, iy + ih);
+  context.lineTo(ix, iy + ih);
+  context.lineTo(ix + bevel, iy + ih - bevel);
+  context.lineTo(ix + iw - bevel, iy + ih - bevel);
+  context.closePath();
+  context.fill();
+  
+  // Effet 3D - bord sombre à gauche (trapèze)
+  context.beginPath();
+  context.moveTo(ix, iy + ih);
+  context.lineTo(ix, iy);
+  context.lineTo(ix + bevel, iy + bevel);
+  context.lineTo(ix + bevel, iy + ih - bevel);
+  context.closePath();
+  context.fill();
+}
+
+function drawPiece(context, matrix, offsetX, offsetY, color) {
+  for (let row = 0; row < matrix.length; row++) {
+    for (let col = 0; col < matrix[row].length; col++) {
+      if (matrix[row][col] && offsetY + row >= 0) {
+        const neighbors = {
+          top:    row > 0 && matrix[row - 1][col] !== 0,
+          bottom: row < matrix.length - 1 && matrix[row + 1][col] !== 0,
+          left:   col > 0 && matrix[row][col - 1] !== 0,
+          right:  col < matrix[row].length - 1 && matrix[row][col + 1] !== 0
+        };
+        drawCell(context, offsetX + col, offsetY + row, color, neighbors);
+      }
+    }
+  }
+}
+
+function drawNextPiece() {
+  if (!nextCtx || !nextPiece) return;
+  
+  nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+  
+  const matrix = nextPiece.matrix;
+  const color = COLORS[nextPiece.name];
+  
+  // Calculer les dimensions réelles de la pièce (sans lignes/colonnes vides)
+  let minRow = matrix.length, maxRow = 0, minCol = matrix[0].length, maxCol = 0;
+  for (let r = 0; r < matrix.length; r++) {
+    for (let c = 0; c < matrix[r].length; c++) {
+      if (matrix[r][c]) {
+        minRow = Math.min(minRow, r);
+        maxRow = Math.max(maxRow, r);
+        minCol = Math.min(minCol, c);
+        maxCol = Math.max(maxCol, c);
+      }
+    }
+  }
+  
+  const pieceWidth = maxCol - minCol + 1;
+  const pieceHeight = maxRow - minRow + 1;
+  
+  // Taille de cellule calculée dynamiquement depuis le canvas principal
+  const cellSize = getCellSize();
+  
+  // Centrer la pièce
+  const offsetX = (nextCanvas.width - pieceWidth * cellSize) / 2;
+  const offsetY = (nextCanvas.height - pieceHeight * cellSize) / 2;
+  
+  // Dessiner chaque cellule avec bordures adaptatives
+  for (let r = minRow; r <= maxRow; r++) {
+    for (let c = minCol; c <= maxCol; c++) {
+      if (matrix[r][c]) {
+        const x = offsetX + (c - minCol) * cellSize;
+        const y = offsetY + (r - minRow) * cellSize;
+        const bevel = Math.round(cellSize * CONFIG.BEVEL_PCT / 100);
+        
+        // Déterminer les voisins dans la matrice
+        const hasTop    = r > 0 && matrix[r - 1][c] !== 0;
+        const hasBottom = r < matrix.length - 1 && matrix[r + 1][c] !== 0;
+        const hasLeft   = c > 0 && matrix[r][c - 1] !== 0;
+        const hasRight  = c < matrix[r].length - 1 && matrix[r][c + 1] !== 0;
+        
+        // Bordure calculée depuis BORDER_SIZE (% de CELL_SIZE)
+        const fullBorder = Math.round(cellSize * CONFIG.BORDER_SIZE / 100);
+        const halfBorder = Math.round(fullBorder / 2);
+        const bTop    = hasTop    ? halfBorder : fullBorder;
+        const bRight  = hasRight  ? halfBorder : fullBorder;
+        const bBottom = hasBottom ? halfBorder : fullBorder;
+        const bLeft   = hasLeft   ? halfBorder : fullBorder;
+        
+        // Coordonnées internes (zone colorée)
+        const ix = x + bLeft;
+        const iy = y + bTop;
+        const iw = cellSize - bLeft - bRight;
+        const ih = cellSize - bTop - bBottom;
+        
+        // Contour noir
+        nextCtx.fillStyle = '#000000';
+        nextCtx.fillRect(x, y, cellSize, cellSize);
+        
+        // Cellule colorée
+        nextCtx.fillStyle = color;
+        nextCtx.fillRect(ix, iy, iw, ih);
+        
+        // Effet 3D - bord clair en haut (trapèze)
+        nextCtx.fillStyle = 'rgba(255,255,255,0.35)';
+        nextCtx.beginPath();
+        nextCtx.moveTo(ix, iy);
+        nextCtx.lineTo(ix + iw, iy);
+        nextCtx.lineTo(ix + iw - bevel, iy + bevel);
+        nextCtx.lineTo(ix + bevel, iy + bevel);
+        nextCtx.closePath();
+        nextCtx.fill();
+        
+        // Effet 3D - bord clair à droite (trapèze)
+        nextCtx.beginPath();
+        nextCtx.moveTo(ix + iw, iy);
+        nextCtx.lineTo(ix + iw, iy + ih);
+        nextCtx.lineTo(ix + iw - bevel, iy + ih - bevel);
+        nextCtx.lineTo(ix + iw - bevel, iy + bevel);
+        nextCtx.closePath();
+        nextCtx.fill();
+        
+        // Effet 3D - bord sombre en bas (trapèze)
+        nextCtx.fillStyle = 'rgba(0,0,0,0.25)';
+        nextCtx.beginPath();
+        nextCtx.moveTo(ix + iw, iy + ih);
+        nextCtx.lineTo(ix, iy + ih);
+        nextCtx.lineTo(ix + bevel, iy + ih - bevel);
+        nextCtx.lineTo(ix + iw - bevel, iy + ih - bevel);
+        nextCtx.closePath();
+        nextCtx.fill();
+        
+        // Effet 3D - bord sombre à gauche (trapèze)
+        nextCtx.beginPath();
+        nextCtx.moveTo(ix, iy + ih);
+        nextCtx.lineTo(ix, iy);
+        nextCtx.lineTo(ix + bevel, iy + bevel);
+        nextCtx.lineTo(ix + bevel, iy + ih - bevel);
+        nextCtx.closePath();
+        nextCtx.fill();
+      }
+    }
+  }
+}
+
+// ===========================================
+// BOUCLE DE JEU
+// ===========================================
+
+function gameLoop(timestamp = 0) {
+  if (!gameRunning || gamePaused) return;
+  
+  const delta = timestamp - lastTime;
+  lastTime = timestamp;
+  dropCounter += delta;
+  
+  if (dropCounter > getDropInterval(gameStats.level)) {
+    softDrop();
+    dropCounter = 0;
+  }
+  
+  draw();
+  animationId = requestAnimationFrame(gameLoop);
+}
+
+// ===========================================
+// CONTRÔLE DU JEU
+// ===========================================
+
+function startGame() {
+  createArena();
+  tetrominoSequence = [];
+  
+  gameStats = {
+    score: 0,
+    level: gameStats.startLevel,
+    lines: 0,
+    startLevel: gameStats.startLevel
+  };
+  
+  gameOver = false;
+  gamePaused = false;
+  gameRunning = true;
+  dropCounter = 0;
+  lastTime = 0;
+  
+  // Préparer les pièces
+  nextPiece = getNextTetromino();
+  currentPiece = getNextTetromino();
+  
+  // Afficher le jeu
+  document.querySelector('.game-container').classList.add('playing');
+  
+  updateDisplay();
+  drawNextPiece();
+  
+  animationId = requestAnimationFrame(gameLoop);
+}
+
+function pauseGame() {
+  if (!gameRunning || gameOver) return;
+  
+  gamePaused = true;
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+  }
+  document.querySelector('.game-container').classList.add('paused');
+  showMenu('pause');
+}
+
+function resumeGame() {
+  if (!gameRunning || gameOver) return;
+  
+  gamePaused = false;
+  document.querySelector('.game-container').classList.remove('paused');
+  document.getElementById('menu-pause').classList.add('hidden');
+  lastTime = performance.now();
+  animationId = requestAnimationFrame(gameLoop);
+}
+
+function quitGame() {
+  gameRunning = false;
+  gamePaused = false;
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+  }
+  
+  document.querySelector('.game-container').classList.remove('playing', 'paused');
+  createArena();
+  draw();
+  showMenu('accueil');
+  displayHighScores();
+}
+
+function triggerGameOver() {
+  gameOver = true;
+  gameRunning = false;
+  
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+  }
+  
+  saveHighScore(gameStats.score);
+  // playSound('gameOver');
+  
+  // Afficher Game Over sur le canvas (positions et tailles en % du canvas)
+  const cw = canvas.width;
+  const ch = canvas.height;
+  
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+  ctx.fillRect(0, ch * 0.5 - ch * 0.0772, cw, ch * 0.1543);
+  
+  ctx.fillStyle = '#ff4444';
+  ctx.font = `${Math.round(ch * 0.037)}px pixel bold`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('GAME OVER', cw / 2, ch * 0.5 - ch * 0.0231);
+  
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `${Math.round(ch * 0.0216)}px Arial`;
+  ctx.fillText(`Score: ${formatNumber(gameStats.score)}`, cw / 2, ch * 0.5 + ch * 0.0231);
+  
+  ctx.font = `${Math.round(ch * 0.0185)}px Arial`;
+  ctx.fillStyle = '#aaaaaa';
+  ctx.fillText('Appuyez sur ESPACE pour rejouer', cw / 2, ch * 0.5 + ch * 0.0617);
+}
+
+// ===========================================
+// AFFICHAGE
+// ===========================================
+
+function updateDisplay() {
+  document.getElementById('score').textContent = formatNumber(gameStats.score);
+  document.getElementById('current-level').textContent = gameStats.level;
+  document.getElementById('lines').textContent = gameStats.lines;
+}
+
+function updateLevelDisplay() {
+  document.getElementById('level-display').textContent = `niveau ${gameStats.startLevel}`;
+}
+
+// ===========================================
+// AUTO-RÉPÉTITION (DAS/ARR)
+// ===========================================
+
+function startDAS(action) {
+  if (dasTimers[action] || !gameRunning || gamePaused) return;
+  
+  // Action immédiate
+  executeAction(action);
+  
+  // Délai initial (DAS)
+  dasTimers[action] = setTimeout(() => {
+    // Répétition (ARR)
+    arrIntervals[action] = setInterval(() => {
+      executeAction(action);
+    }, options.arrSpeed);
+  }, options.dasDelay);
+}
+
+function stopDAS(action) {
+  if (dasTimers[action]) {
+    clearTimeout(dasTimers[action]);
+    delete dasTimers[action];
+  }
+  if (arrIntervals[action]) {
+    clearInterval(arrIntervals[action]);
+    delete arrIntervals[action];
+  }
+}
+
+function executeAction(action) {
+  switch (action) {
+    case 'moveLeft': movePiece(-1); break;
+    case 'moveRight': movePiece(1); break;
+    case 'rotate': rotatePiece(); break;
+    case 'softDrop': softDrop(); break;
+    case 'hardDrop': hardDrop(); break;
+  }
+}
+
+// ===========================================
+// GESTION DES TOUCHES
+// ===========================================
+
+function handleKeyDown(e) {
+  const key = e.key;
+  
+  // Si on attend une nouvelle touche pour la configuration
+  if (waitingForKey) {
+    e.preventDefault();
+    if (key !== 'Escape') {
+      options.keys[waitingForKey] = key;
+      saveOptions();
+      updateOptionsDisplay();
+    }
+    document.querySelector('.key-btn.listening')?.classList.remove('listening');
+    waitingForKey = null;
+    return;
+  }
+  
+  // Touche Échap = Pause
+  if (key === 'Escape') {
+    if (gameRunning && !gameOver) {
+      if (gamePaused) {
+        if (currentMenu === 'pause') {
+          resumeGame();
+        } else {
+          showMenu('pause');
+        }
+      } else {
+        pauseGame();
+      }
+    }
+    return;
+  }
+  
+  // Espace pour rejouer après Game Over
+  if (key === ' ' && gameOver) {
+    startGame();
+    return;
+  }
+  
+  // Actions de jeu avec DAS
+  if (!keysPressed[key]) {
+    keysPressed[key] = true;
+    
+    for (const [action, actionKey] of Object.entries(options.keys)) {
+      if (key === actionKey) {
+        if (action === 'hardDrop' || action === 'rotate') {
+          // Hard drop et rotation sans répétition
+          executeAction(action);
+        } else {
+          // DAS uniquement pour moveLeft, moveRight, softDrop
+          startDAS(action);
+        }
+        e.preventDefault();
+        break;
+      }
+    }
+  }
+}
+
+function handleKeyUp(e) {
+  const key = e.key;
+  keysPressed[key] = false;
+  
+  // Arrêter le DAS pour cette touche
+  for (const [action, actionKey] of Object.entries(options.keys)) {
+    if (key === actionKey) {
+      stopDAS(action);
+      break;
+    }
+  }
+}
+
+// ===========================================
+// ÉCOUTEURS D'ÉVÉNEMENTS
+// ===========================================
+
+function initEventListeners() {
+  // Menu Accueil
+  document.getElementById('play-btn').addEventListener('click', startGame);
+  
+  document.getElementById('level-down').addEventListener('click', () => {
+    if (gameStats.startLevel > 1) {
+      gameStats.startLevel--;
+      updateLevelDisplay();
+    }
+  });
+  
+  document.getElementById('level-up').addEventListener('click', () => {
+    if (gameStats.startLevel < CONFIG.MAX_LEVEL) {
+      gameStats.startLevel++;
+      updateLevelDisplay();
+    }
+  });
+  
+  document.getElementById('settings-btn').addEventListener('click', () => {
+    previousMenu = 'accueil';
+    showMenu('options');
+  });
+  
+  document.getElementById('help-btn').addEventListener('click', () => {
+    previousMenu = 'accueil';
+    showMenu('aide');
+  });
+  
+  // Menu Pause
+  document.getElementById('resume-btn').addEventListener('click', resumeGame);
+  
+  document.getElementById('pause-options-btn').addEventListener('click', () => {
+    previousMenu = 'pause';
+    showMenu('options');
+  });
+  
+  document.getElementById('pause-help-btn').addEventListener('click', () => {
+    previousMenu = 'pause';
+    showMenu('aide');
+  });
+  
+  document.getElementById('quit-btn').addEventListener('click', quitGame);
+  
+  // Menu Aide
+  document.getElementById('help-done-btn').addEventListener('click', showPreviousMenu);
+  
+  // Menu Options
+  document.getElementById('options-done-btn').addEventListener('click', showPreviousMenu);
+  document.getElementById('reset-scores-btn').addEventListener('click', resetHighScores);
+  document.getElementById('reset-options-btn').addEventListener('click', resetOptions);
+  
+  // Boutons de configuration des touches
+  document.querySelectorAll('.key-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.id.replace('key-', '');
+      waitingForKey = action;
+      document.querySelectorAll('.key-btn').forEach(b => b.classList.remove('listening'));
+      btn.classList.add('listening');
+    });
+  });
+  
+  // Boutons d'ajustement des options
+  document.querySelectorAll('.adjust-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      adjustOption(btn.dataset.target, btn.dataset.dir);
+    });
+  });
+  
+  // Contrôles en jeu
+  document.getElementById('pause-btn').addEventListener('click', () => {
+    if (gameRunning && !gameOver) {
+      if (gamePaused) {
+        resumeGame();
+      } else {
+        pauseGame();
+      }
+    }
+  });
+  
+  document.getElementById('sound-toggle').addEventListener('click', () => {
+    audioMuted = !audioMuted;
+    const btn = document.getElementById('sound-toggle');
+    btn.textContent = audioMuted ? '🔇' : '🔊';
+    btn.classList.toggle('muted', audioMuted);
+  });
+  
+  // Clavier
+  document.addEventListener('keydown', handleKeyDown);
+  document.addEventListener('keyup', handleKeyUp);
+}
+
+// ===========================================
+// INITIALISATION
+// ===========================================
+
+function init() {
+  canvas = document.getElementById('tetris');
+  ctx = canvas.getContext('2d');
+  
+  nextCanvas = document.getElementById('next-piece');
+  nextCtx = nextCanvas.getContext('2d');
+  
+  loadOptions();
+  createArena();
+  displayHighScores();
+  updateDisplay();
+  updateLevelDisplay();
+  initEventListeners();
+  
+  draw();
+  
+  console.log('Tetris initialisé !');
+}
+
+document.addEventListener('DOMContentLoaded', init);

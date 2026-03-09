@@ -1,0 +1,575 @@
+/* ========================================
+   TETRIS - Feuille de styles complète
+   Clone fidèle de Tetris N-Blox
+   ======================================== */
+
+/* === POLICE CUSTOM === */
+@font-face {
+  font-family: 'FFF Forward';
+  src: url('font/FFFFORWA.TTF') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* === RESET ET BASE === */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'FFF Forward';
+}
+
+body {
+  /* Fond bleu-gris pâle avec rayures diagonales fines */
+  background: 
+    repeating-linear-gradient(
+      135deg,
+      #cfd7e2,
+      #cfd7e2 5px,
+      #d7dee8 5px,
+      #d7dee8 10px
+    );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+/* === ÉLÉMENTS CACHÉS === */
+.hidden {
+  display: none !important;
+}
+
+/* === CONTENEUR PRINCIPAL === */
+.game-container {
+  display: flex;
+  gap: 1.85%;
+  padding: 2.31%;
+  width: 100%;
+  max-width: 650px;
+}
+
+/* ===========================================
+   COLONNE GAUCHE (~60%) - Zone de jeu
+   =========================================== */
+
+.left-column {
+  width: 63%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-area {
+  background: linear-gradient(180deg, #dce4ec 0%, #c4d0dc 100%);
+  border: 5px solid #3d4d5d;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#tetris {
+  display: block;
+}
+
+.menus-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(180deg, #dce4ec 0%, #c4d0dc 100%);
+  border: 5px solid #3d4d5d;
+}
+
+.panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 240px;
+  padding: 15px;
+}
+
+/* ===========================================
+   COLONNE DROITE (~30%) - Infos
+   =========================================== */
+
+.right-column {
+  width: 30.3%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Bloc commun pour tous les éléments de la colonne droite */
+.info-block {
+  background: linear-gradient(180deg, #dce4ec 0%, #c4d0dc 100%);
+  border: 5px solid #3d4d5d;
+  padding: 12px;
+}
+
+/* === PREVIEW PROCHAINE PIÈCE === */
+.next-piece-block {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-height: 144px;
+}
+
+#next-piece {
+  background: transparent;
+  display: block;
+}
+
+/* === STATISTIQUES === */
+.stats-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: rgba(61, 77, 93, 0.08);
+}
+
+.stat-label {
+  color: #3d4d5d;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.stat-value {
+  color: #1a1a2e;
+  font-size: 14px;
+  font-weight: bold;
+  font-family: 'fff forward', sans-serif;
+  letter-spacing: -1px;
+}
+
+/* === CONTRÔLES (PAUSE + SON) === */
+.controls-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pause-btn {
+  background: transparent;
+  border: none;
+  color: #3d4d5d;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 8px 15px;
+  transition: all 0.12s ease;
+  font-family: fff forward, sans-serif;
+}
+
+.pause-btn:hover {
+  color: #2a3a4a;
+}
+
+.sound-btn {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 5px;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.sound-btn:hover {
+  opacity: 1;
+}
+
+.sound-btn.muted {
+  opacity: 0.4;
+}
+
+/* === LOGO === */
+.logo-block {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+}
+
+.logo-img {
+  max-width: 140%;
+  height: auto;
+  justify-self: center;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+/* === BOUTONS DE MENU === */
+.menu-btn {
+  background: #e8eef5;
+  border: 3px solid #3d4d5d;
+  color: #3d4d5d;
+  font-family: 'FFF Forward', sans-serif;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.menu-btn:hover {
+  background: #e8eef5;
+  transform: translateY(-1px);
+}
+
+.menu-btn:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.menu-btn.large {
+  font-size: 20px;
+  padding: 18px 20px;
+}
+
+/* === SÉLECTEUR DE NIVEAU === */
+.level-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #e8eef5;
+  border: 3px solid #3d4d5d;
+  padding: 12px 15px;
+}
+
+#level-display {
+  color: #3d4d5d;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.arrow-btn {
+  background: transparent;
+  border: none;
+  color: #3d4d5d;
+  font-size: 22px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 5px 12px;
+  transition: all 0.12s ease;
+}
+
+.arrow-btn:hover {
+  background: rgba(61, 77, 93, 0.1);
+  color: #2a3a4a;
+}
+
+/* === HIGH SCORES === */
+.high-scores-box {
+  background: #e8eef5;
+  border: 3px solid #3d4d5d;
+  padding: 12px 15px;
+  flex-grow: 1;
+}
+
+.high-scores-title {
+  color: #3d4d5d;
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+#high-scores-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.score-entry {
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px 10px;
+  background: rgba(200, 212, 227, 0.6);
+  color: #4a5a6a;
+  font-size: 12px;
+  font-weight: 100;
+  font-family: FFF Forward, sans-serif;
+}
+
+/* === BOUTONS EN BAS === */
+.bottom-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.icon-btn {
+  background: #e8eef5;
+  border: 3px solid #3d4d5d;
+  color: #3d4d5d;
+  font-size: 15px;
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: FFF Forward, sans-serif;
+}
+
+.icon-btn:hover {
+  background: #e8eef5;
+}
+
+/* ===========================================
+   MENU PAUSE
+   =========================================== */
+
+.pause-title {
+  color: #3d4d5d;
+  font-size: 22px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* ===========================================
+   MENU AIDE
+   =========================================== */
+
+.help-title {
+  color: #3d4d5d;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 15px;
+  font-family: FFF Forward, sans-serif;
+}
+
+.help-content {
+  background: transparent;
+  padding: 10px 0;
+  flex-grow: 1;
+}
+
+.help-line {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  padding: 6px 0;
+  font-size: 13px;
+  color: #3d4d5d;
+}
+
+.help-line.separator {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(61, 77, 93, 0.2);
+}
+
+.key-name {
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.key-desc {
+  color: #5a6a7a;
+}
+
+/* ===========================================
+   MENU OPTIONS
+   =========================================== */
+
+.options-title {
+  color: #3d4d5d;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.options-section {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(61, 77, 93, 0.15);
+}
+
+.options-section:last-of-type {
+  border-bottom: none;
+}
+
+.option-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.option-label {
+  font-size: 11px;
+  font-weight: bold;
+  color: #3d4d5d;
+}
+
+.key-btn {
+  background: #e8eef5;
+  border: 2px solid #3d4d5d;
+  border-radius: 3px;
+  color: #3d4d5d;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 6px 12px;
+  cursor: pointer;
+  min-width: 110px;
+  text-align: center;
+  transition: all 0.12s ease;
+}
+
+.key-btn:hover {
+  background: #d8e4f3;
+}
+
+.key-btn.listening {
+  background: #f0f080;
+  border-color: #a0a000;
+  animation: pulse 0.5s infinite alternate;
+}
+
+@keyframes pulse {
+  from { box-shadow: 0 0 5px rgba(160, 160, 0, 0.5); }
+  to { box-shadow: 0 0 15px rgba(160, 160, 0, 0.8); }
+}
+
+.option-value-control {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.adjust-btn {
+  background: linear-gradient(180deg, #e8eef5 0%, #c8d4e3 100%);
+  border: 2px solid #3d4d5d;
+  border-radius: 3px;
+  color: #3d4d5d;
+  font-size: 14px;
+  font-weight: bold;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+}
+
+.adjust-btn:hover {
+  background: #d8e4f3;
+}
+
+.option-value {
+  font-size: 11px;
+  font-weight: bold;
+  color: #3d4d5d;
+  min-width: 60px;
+  text-align: center;
+}
+
+.options-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.small-btn {
+  background: #e8eef5;
+  border: 2px solid #3d4d5d;
+  border-radius: 3px;
+  color: #3d4d5d;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 8px 12px;
+  cursor: pointer;
+  flex: 1;
+  transition: all 0.12s ease;
+}
+
+.small-btn:hover {
+  background: #d8e4f3;
+}
+
+/* ===========================================
+   MODE JEU EN COURS
+   =========================================== */
+
+/* En jeu : cacher l'overlay des menus */
+.game-container.playing .menus-overlay {
+  display: none !important;
+}
+
+/* En pause : afficher le menu pause centré */
+.game-container.playing.paused .menus-overlay {
+  display: flex !important;
+  background: rgba(220, 228, 236, 0.95);
+}
+
+.game-container.playing.paused #menu-pause {
+  display: flex !important;
+}
+
+.game-container.playing.paused .panel-content:not(#menu-pause) {
+  display: none !important;
+}
+
+.game-container {
+  position: relative;
+}
+
+/* ===========================================
+   RESPONSIVE
+   =========================================== */
+
+@media (max-width: 620px) {
+  .game-container {
+    flex-direction: column;
+    padding: 10px;
+  }
+  
+  .left-column, .right-column {
+    flex: none;
+    width: 100%;
+  }
+  
+  .game-area {
+    padding: 8px;
+  }
+  
+  #tetris {
+    width: 56%;
+    aspect-ratio: 360 / 648;
+  }
+  
+  .right-column {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  
+  .info-block {
+    flex: 1;
+    min-width: 120px;
+  }
+}

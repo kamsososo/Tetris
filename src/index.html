@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <title>Tetris</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ===== CONTENEUR PRINCIPAL ===== -->
+  <div class="game-container">
+    
+    <!-- ===== COLONNE GAUCHE - Zone de jeu ===== -->
+    <div class="left-column">
+      <div class="game-area">
+        <canvas id="tetris" width="360" height="648"></canvas>
+      </div>
+      
+      <!-- Menus superposés sur la zone de jeu -->
+      <div class="menus-overlay">
+      
+      <!-- MENU ACCUEIL -->
+      <div id="menu-accueil" class="panel-content">
+        <button id="play-btn" class="menu-btn large">C'est parti!</button>
+        
+        <div class="level-selector">
+          <button id="level-down" class="arrow-btn">&lt;</button>
+          <span id="level-display">level: 1</span>
+          <button id="level-up" class="arrow-btn">&gt;</button>
+        </div>
+        
+        <div class="high-scores-box">
+          <div class="high-scores-title">meilleurs scores</div>
+          <div id="high-scores-list">
+            <!-- Scores injectés par JavaScript -->
+          </div>
+        </div>
+        
+        <div class="bottom-buttons">
+          <button id="settings-btn" class="icon-btn" title="Options">⚙</button>
+          <button id="help-btn" class="icon-btn" title="Aide">aide</button>
+        </div>
+      </div>
+      
+      <!-- MENU PAUSE -->
+      <div id="menu-pause" class="panel-content hidden">
+        <div class="pause-title">pause</div>
+        <button id="resume-btn" class="menu-btn">reprendre</button>
+        <button id="pause-options-btn" class="menu-btn">options</button>
+        <button id="pause-help-btn" class="menu-btn">aide</button>
+        <button id="quit-btn" class="menu-btn">quitter</button>
+      </div>
+      
+      <!-- MENU AIDE -->
+      <div id="menu-aide" class="panel-content hidden">
+        <div class="help-title">contrôles</div>
+        <div class="help-content">
+          <div class="help-line">
+            <span class="key-name">Flèche gauche</span>
+            <span class="key-desc">- Déplacer à gauche</span>
+          </div>
+          <div class="help-line">
+            <span class="key-name">Flèche droite</span>
+            <span class="key-desc">- Déplacer à droite</span>
+          </div>
+          <div class="help-line">
+            <span class="key-name">Flèche haut</span>
+            <span class="key-desc">- Rotation</span>
+          </div>
+          <div class="help-line">
+            <span class="key-name">Flèche bas</span>
+            <span class="key-desc">- Descente douce</span>
+          </div>
+          <div class="help-line">
+            <span class="key-name">Espace</span>
+            <span class="key-desc">- Descente rapide</span>
+          </div>
+          <div class="help-line separator">
+            <span class="key-name">Échap</span>
+            <span class="key-desc">- Pause</span>
+          </div>
+        </div>
+        <button id="help-done-btn" class="menu-btn">terminé</button>
+      </div>
+      
+      <!-- MENU OPTIONS -->
+      <div id="menu-options" class="panel-content hidden">
+        <div class="options-title">options</div>
+        
+        <div class="options-section">
+          <div class="option-row key-binding" data-action="moveRight">
+            <span class="option-label">DÉPLACER DROITE</span>
+            <button class="key-btn" id="key-moveRight">FLÈCHE DROITE</button>
+          </div>
+          <div class="option-row key-binding" data-action="moveLeft">
+            <span class="option-label">DÉPLACER GAUCHE</span>
+            <button class="key-btn" id="key-moveLeft">FLÈCHE GAUCHE</button>
+          </div>
+          <div class="option-row key-binding" data-action="rotate">
+            <span class="option-label">ROTATION</span>
+            <button class="key-btn" id="key-rotate">FLÈCHE HAUT</button>
+          </div>
+          <div class="option-row key-binding" data-action="softDrop">
+            <span class="option-label">DESCENTE DOUCE</span>
+            <button class="key-btn" id="key-softDrop">FLÈCHE BAS</button>
+          </div>
+          <div class="option-row key-binding" data-action="hardDrop">
+            <span class="option-label">DESCENTE RAPIDE</span>
+            <button class="key-btn" id="key-hardDrop">ESPACE</button>
+          </div>
+        </div>
+        
+        <div class="options-section">
+          <div class="option-row">
+            <span class="option-label">DÉLAI AUTO-RÉPÉT.</span>
+            <div class="option-value-control">
+              <button class="adjust-btn" data-target="dasDelay" data-dir="-1">-</button>
+              <span id="dasDelay-value" class="option-value">170 ms</span>
+              <button class="adjust-btn" data-target="dasDelay" data-dir="1">+</button>
+            </div>
+          </div>
+          <div class="option-row">
+            <span class="option-label">VITESSE AUTO-RÉPÉT.</span>
+            <div class="option-value-control">
+              <button class="adjust-btn" data-target="arrSpeed" data-dir="-1">-</button>
+              <span id="arrSpeed-value" class="option-value">50 ms</span>
+              <button class="adjust-btn" data-target="arrSpeed" data-dir="1">+</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="options-section">
+          <div class="option-row">
+            <span class="option-label">VOLUME EFFETS</span>
+            <div class="option-value-control">
+              <button class="adjust-btn" data-target="sfxVolume" data-dir="-1">-</button>
+              <span id="sfxVolume-value" class="option-value">50%</span>
+              <button class="adjust-btn" data-target="sfxVolume" data-dir="1">+</button>
+            </div>
+          </div>
+          <div class="option-row">
+            <span class="option-label">VOLUME MUSIQUE</span>
+            <div class="option-value-control">
+              <button class="adjust-btn" data-target="musicVolume" data-dir="-1">-</button>
+              <span id="musicVolume-value" class="option-value">50%</span>
+              <button class="adjust-btn" data-target="musicVolume" data-dir="1">+</button>
+            </div>
+          </div>
+          <div class="option-row">
+            <span class="option-label">TYPE MUSIQUE</span>
+            <div class="option-value-control">
+              <button class="adjust-btn" data-target="musicType" data-dir="-1">-</button>
+              <span id="musicType-value" class="option-value">TYPE 1</span>
+              <button class="adjust-btn" data-target="musicType" data-dir="1">+</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="options-buttons">
+          <button id="reset-scores-btn" class="small-btn">RÉINIT. SCORES</button>
+          <button id="reset-options-btn" class="small-btn">RÉINIT. OPTIONS</button>
+        </div>
+        
+        <button id="options-done-btn" class="menu-btn">terminé</button>
+      </div>
+      
+      </div><!-- fin menus-overlay -->
+    </div>
+    
+    <!-- ===== COLONNE DROITE (~30%) - Infos ===== -->
+    <div class="right-column">
+      
+      <!-- Preview prochaine pièce -->
+      <div class="info-block next-piece-block">
+        <canvas id="next-piece" width="168" height="168"></canvas>
+      </div>
+      
+      <!-- Statistiques -->
+      <div class="info-block stats-block">
+        <div class="stat-row">
+          <span class="stat-label">niveau</span>
+          <span id="current-level" class="stat-value">1</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">score</span>
+          <span id="score" class="stat-value">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">lignes</span>
+          <span id="lines" class="stat-value">0</span>
+        </div>
+      </div>
+      
+      <!-- Contrôles en jeu -->
+      <div class="info-block controls-block">
+        <button id="pause-btn" class="pause-btn">pause</button>
+        <button id="sound-toggle" class="sound-btn" title="Son">🔊</button>
+      </div>
+      
+      <!-- Logo -->
+      <div class="logo-block">
+        <img src="img/maia.png" alt="Tetris N-blox" class="logo-img">
+      </div>
+      
+    </div>
+    
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="tetris.js"></script>
+</body>
+</html>
