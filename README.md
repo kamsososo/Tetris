@@ -1,6 +1,6 @@
 # Tetris
 
-Un clone fidèle de **Tetris N-Blox**, développé en HTML5 / CSS3 / JavaScript vanilla — sans aucune dépendance externe.
+Un clone de **Tetris N-Blox**, développé en HTML5 / CSS3 / JavaScript vanilla — sans aucune dépendance externe.
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
@@ -59,10 +59,6 @@ xdg-open src/index.html   # Linux
 | Échap | Pause |
 
 Les touches sont modifiables dans le menu **Options**.
-
-## Captures d'écran
-
-*À venir*
 
 ## Améliorations prévues
 
