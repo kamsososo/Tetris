@@ -93,7 +93,7 @@ const DEFAULT_OPTIONS = {
   },
   
   // Auto-répétition (DAS = Delayed Auto Shift, ARR = Auto Repeat Rate)
-  dasDelay: 170,    // Délai avant répétition (ms)
+  dasDelay: 100,    // Délai avant répétition (ms)
   arrSpeed: 50,     // Vitesse de répétition (ms)
   
   // Audio
