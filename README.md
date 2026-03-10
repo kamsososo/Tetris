@@ -62,8 +62,6 @@ Les touches sont modifiables dans le menu **Options**.
 
 ## Améliorations prévues
 
-- Bordures noires des pièces
-- Animation de clignotement lors de l'effacement des lignes
 - Photos dynamiques qui changent à chaque ligne effacée
 - Système de combos avec visuels arcade
 - Images pour les niveaux (au lieu de nombres)
