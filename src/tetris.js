@@ -52,6 +52,11 @@ let keysPressed = {};
 let dasTimers = {};
 let arrIntervals = {};
 
+// Animation de clignotement des lignes
+let flashingRows = [];           // Indices des lignes qui clignotent
+let flashPhase = false;          // true = blanc, false = couleur normale
+let linesClearingAnimation = false; // true = animation en cours
+
 // Audio
 let audioMuted = false;
 
@@ -362,7 +367,7 @@ function rotatePiece() {
 }
 
 function softDrop() {
-  if (!gameRunning || gamePaused || gameOver) return;
+  if (!gameRunning || gamePaused || gameOver || linesClearingAnimation) return;
   
   const newRow = currentPiece.row + 1;
   if (isValidMove(currentPiece.matrix, newRow, currentPiece.col)) {
@@ -374,7 +379,7 @@ function softDrop() {
 }
 
 function hardDrop() {
-  if (!gameRunning || gamePaused || gameOver) return;
+  if (!gameRunning || gamePaused || gameOver || linesClearingAnimation) return;
   
   while (isValidMove(currentPiece.matrix, currentPiece.row + 1, currentPiece.col)) {
     currentPiece.row++;
@@ -383,7 +388,7 @@ function hardDrop() {
   // playSound('drop');
 }
 
-function placePiece() {
+async function placePiece() {
   for (let row = 0; row < currentPiece.matrix.length; row++) {
     for (let col = 0; col < currentPiece.matrix[row].length; col++) {
       if (currentPiece.matrix[row][col]) {
@@ -396,7 +401,7 @@ function placePiece() {
     }
   }
   
-  const linesCleared = clearLines();
+  const linesCleared = await clearLines();
   if (linesCleared > 0) {
     updateScore(linesCleared);
   }
@@ -411,24 +416,77 @@ function placePiece() {
   }
 }
 
-function clearLines() {
-  let linesCleared = 0;
-  
-  for (let row = CONFIG.ARENA_HEIGHT - 1; row >= 0;) {
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function clearLines() {
+  // Détecter les lignes complètes
+  let fullRows = [];
+  for (let row = CONFIG.ARENA_HEIGHT - 1; row >= 0; row--) {
     if (arena[row].every(cell => cell !== 0)) {
-      arena.splice(row, 1);
-      arena.unshift(new Array(CONFIG.ARENA_WIDTH).fill(0));
-      linesCleared++;
-    } else {
-      row--;
+      fullRows.push(row);
     }
   }
-  
-  if (linesCleared > 0) {
-    // playSound(linesCleared === 4 ? 'tetris' : 'clear');
+
+  if (fullRows.length === 0) return 0;
+
+  // Animation de clignotement
+  linesClearingAnimation = true;
+  flashingRows = fullRows;
+
+  for (let i = 0; i < 3; i++) {
+    flashPhase = true;   // Blanc
+    draw();
+    await delay(50);
+    flashPhase = false;  // Couleur normale
+    draw();
+    await delay(50);
   }
-  
-  return linesCleared;
+
+  // Vider les lignes complètes (créer des "trous") sans les retirer de l'arène
+  flashingRows = [];
+  flashPhase = false;
+  const fullRowSet = new Set(fullRows);
+  for (const row of fullRows) {
+    arena[row] = new Array(CONFIG.ARENA_WIDTH).fill(0);
+  }
+
+  // Calculer les décalages de chute pour chaque ligne non-vide
+  const cellSize = getCellSize();
+  const targetOffsets = {};
+  for (let row = CONFIG.ARENA_HEIGHT - 1; row >= 0; row--) {
+    if (fullRowSet.has(row)) continue; // Ligne vidée, pas de chute
+    // Compter combien de lignes vidées se trouvent EN DESSOUS de cette ligne
+    let gapBelow = 0;
+    for (const fr of fullRows) {
+      if (fr > row) gapBelow++;
+    }
+    if (gapBelow > 0) {
+      targetOffsets[row] = gapBelow * cellSize;
+    }
+  }
+
+  // Animer la chute progressive (50ms par ligne effacée)
+  if (Object.keys(targetOffsets).length > 0) {
+    const dropDuration = fullRows.length * 50;
+    await animateDrop(targetOffsets, dropDuration);
+  }
+
+  // Finaliser l'arène : supprimer les lignes vides et ajouter en haut
+  fullRows.sort((a, b) => b - a);
+  for (const row of fullRows) {
+    arena.splice(row, 1);
+  }
+  for (let i = 0; i < fullRows.length; i++) {
+    arena.unshift(new Array(CONFIG.ARENA_WIDTH).fill(0));
+  }
+
+  linesClearingAnimation = false;
+
+  // playSound(fullRows.length === 4 ? 'tetris' : 'clear');
+
+  return fullRows.length;
 }
 
 function updateScore(linesCleared) {
@@ -512,7 +570,12 @@ function draw() {
           left:   col > 0 && arena[row][col - 1] !== 0,
           right:  col < CONFIG.ARENA_WIDTH - 1 && arena[row][col + 1] !== 0
         };
-        drawCell(ctx, col, row, COLORS[cellType], neighbors);
+        // Flash blanc si la ligne est en cours de clignotement
+        if (flashingRows.includes(row) && flashPhase) {
+          drawCell(ctx, col, row, '#FFFFFF', neighbors);
+        } else {
+          drawCell(ctx, col, row, COLORS[cellType], neighbors);
+        }
       }
     }
   }
@@ -523,10 +586,63 @@ function draw() {
   }
 }
 
-function drawCell(context, col, row, color, neighbors) {
+// Dessine l'arène avec des décalages verticaux en pixels par ligne (pour l'animation de chute)
+function drawArenaWithOffsets(rowOffsets) {
+  if (!bgPattern) {
+    bgPattern = createBgPattern();
+  }
+
+  ctx.fillStyle = bgPattern;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let row = 0; row < CONFIG.ARENA_HEIGHT; row++) {
+    for (let col = 0; col < CONFIG.ARENA_WIDTH; col++) {
+      if (arena[row][col]) {
+        const cellType = arena[row][col];
+        const neighbors = {
+          top:    row > 0 && arena[row - 1][col] !== 0,
+          bottom: row < CONFIG.ARENA_HEIGHT - 1 && arena[row + 1][col] !== 0,
+          left:   col > 0 && arena[row][col - 1] !== 0,
+          right:  col < CONFIG.ARENA_WIDTH - 1 && arena[row][col + 1] !== 0
+        };
+        drawCell(ctx, col, row, COLORS[cellType], neighbors, rowOffsets[row] || 0);
+      }
+    }
+  }
+}
+
+// Anime la chute des lignes restantes après effacement
+function animateDrop(targetOffsets, duration) {
+  return new Promise(resolve => {
+    const startTime = performance.now();
+
+    function tick(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Interpolation linéaire des décalages
+      const currentOffsets = {};
+      for (const row in targetOffsets) {
+        currentOffsets[row] = targetOffsets[row] * progress;
+      }
+
+      drawArenaWithOffsets(currentOffsets);
+
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        resolve();
+      }
+    }
+
+    requestAnimationFrame(tick);
+  });
+}
+
+function drawCell(context, col, row, color, neighbors, pixelOffsetY) {
   const cellSize = getCellSize();
   const x = col * cellSize;
-  const y = row * cellSize;
+  const y = row * cellSize + (pixelOffsetY || 0);
   const size = cellSize;
   const n = neighbors || { top: false, right: false, bottom: false, left: false };
   
@@ -724,6 +840,12 @@ function drawNextPiece() {
 function gameLoop(timestamp = 0) {
   if (!gameRunning || gamePaused) return;
   
+  // Ne pas avancer le jeu pendant l'animation de clignotement
+  if (linesClearingAnimation) {
+    animationId = requestAnimationFrame(gameLoop);
+    return;
+  }
+
   const delta = timestamp - lastTime;
   lastTime = timestamp;
   dropCounter += delta;
@@ -732,7 +854,9 @@ function gameLoop(timestamp = 0) {
     softDrop();
     dropCounter = 0;
   }
-  
+
+  if (!gameRunning) return;
+
   draw();
   animationId = requestAnimationFrame(gameLoop);
 }
@@ -858,7 +982,7 @@ function updateLevelDisplay() {
 // ===========================================
 
 function startDAS(action) {
-  if (dasTimers[action] || !gameRunning || gamePaused) return;
+  if (dasTimers[action] || !gameRunning || gamePaused || linesClearingAnimation) return;
   
   // Action immédiate
   executeAction(action);
@@ -884,6 +1008,7 @@ function stopDAS(action) {
 }
 
 function executeAction(action) {
+  if (linesClearingAnimation) return;
   switch (action) {
     case 'moveLeft': movePiece(-1); break;
     case 'moveRight': movePiece(1); break;

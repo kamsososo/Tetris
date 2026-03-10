@@ -19,7 +19,7 @@ const CONFIG = {
   MAX_HIGH_SCORES: 10,   // Nombre de scores sauvegardés
 
   // === VITESSE ===
-  BASE_DROP_INTERVAL: 750,  // Intervalle de base (ms)
+  BASE_DROP_INTERVAL: 500,  // Intervalle de base (ms)
 
   // === SCORE (Standard Tetris) ===
   // Points = valeur × niveau actuel
