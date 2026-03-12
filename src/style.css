@@ -27,16 +27,16 @@ body {
   /* Fond bleu-gris pâle avec rayures diagonales fines */
   background: 
     repeating-linear-gradient(
-      135deg,
-      #cfd7e2,
-      #cfd7e2 5px,
-      #d7dee8 5px,
-      #d7dee8 10px
+      120deg,
+      #deecfc ,
+      #deecfc 2px,
+      #c7d5e9 2px,
+      #c7d5e9 4px
     );
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  overflow-x: auto;
 }
 
 /* === ÉLÉMENTS CACHÉS === */
@@ -47,26 +47,26 @@ body {
 /* === CONTENEUR PRINCIPAL === */
 .game-container {
   display: flex;
-  gap: 1.85%;
-  padding: 2.31%;
-  width: 100%;
-  max-width: 650px;
+  gap: 12px;
+  padding: 15px;
+  width: 650px;
+  min-width: 650px;
+  flex-shrink: 0;
 }
 
 /* ===========================================
-   COLONNE GAUCHE (~60%) - Zone de jeu
+   COLONNE GAUCHE - Zone de jeu
    =========================================== */
 
 .left-column {
-  width: 63%;
   position: relative;
   display: flex;
   flex-direction: column;
 }
 
 .game-area {
-  background: linear-gradient(180deg, #dce4ec 0%, #c4d0dc 100%);
-  border: 5px solid #3d4d5d;
+  background: #dfedfd;
+  border: 5px solid #6b78a3;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -74,7 +74,21 @@ body {
 
 #tetris {
   display: block;
+  background: 
+    repeating-linear-gradient(
+      120deg,
+      #c9d7f0 ,
+      #c9d7f0 2px,
+      #b7c5e0 2px,
+      #b7c5e0 4px
+    );
 }
+
+/* SI JE VEUX MAIA EN FOND (mais ça rend le jeu moins lisible) :
+  background-image: url('img/maia.png');
+  background-size: cover; 
+  background-position: center;
+*/
 
 .menus-overlay {
   position: absolute;
@@ -85,8 +99,19 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(180deg, #dce4ec 0%, #c4d0dc 100%);
-  border: 5px solid #3d4d5d;
+  background: 
+    repeating-linear-gradient(
+      120deg,
+      #c9d7f0 ,
+      #c9d7f0 2px,
+      #b7c5e0 2px,
+      #b7c5e0 4px
+    );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-x: auto;
+  border: 5px solid #6b78a3;
 }
 
 .panel-content {
@@ -98,11 +123,10 @@ body {
 }
 
 /* ===========================================
-   COLONNE DROITE (~30%) - Infos
+   COLONNE DROITE - Infos
    =========================================== */
 
 .right-column {
-  width: 30.3%;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -110,8 +134,8 @@ body {
 
 /* Bloc commun pour tous les éléments de la colonne droite */
 .info-block {
-  background: linear-gradient(180deg, #dce4ec 0%, #c4d0dc 100%);
-  border: 5px solid #3d4d5d;
+  background: #dfedfd;
+  border: 5px solid #6b78a3;
   padding: 12px;
 }
 
@@ -120,7 +144,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  max-height: 144px;
+  height: 144px;
 }
 
 #next-piece {
@@ -140,17 +164,17 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 6px 8px;
-  background: rgba(61, 77, 93, 0.08);
+  background: #c7d5e9;
 }
 
 .stat-label {
-  color: #3d4d5d;
+  color: #5e6b98;
   font-size: 14px;
   font-weight: bold;
 }
 
 .stat-value {
-  color: #1a1a2e;
+  color: #5e6b98;
   font-size: 14px;
   font-weight: bold;
   font-family: 'fff forward', sans-serif;
@@ -168,7 +192,7 @@ body {
 .pause-btn {
   background: transparent;
   border: none;
-  color: #3d4d5d;
+  color: #5e6b98;
   font-size: 15px;
   font-weight: bold;
   cursor: pointer;
@@ -178,6 +202,7 @@ body {
 }
 
 .pause-btn:hover {
+  background: #c6d5e6;
   color: #2a3a4a;
 }
 
@@ -208,7 +233,7 @@ body {
 }
 
 .logo-img {
-  max-width: 140%;
+  width: 100%;
   height: auto;
   justify-self: center;
   filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.4));
@@ -216,33 +241,24 @@ body {
 
 /* === BOUTONS DE MENU === */
 .menu-btn {
-  background: #e8eef5;
-  border: 3px solid #3d4d5d;
-  color: #3d4d5d;
+  background: #dfedfd;
+  border: 3px solid #6b78a3;
+  color: #5e6b98;
   font-family: 'FFF Forward', sans-serif;
   font-size: 18px;
-  font-weight: bold;
   padding: 14px 20px;
   cursor: pointer;
   transition: all 0.12s ease;
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .menu-btn:hover {
-  background: #e8eef5;
-  transform: translateY(-1px);
-}
-
-.menu-btn:active {
-  transform: translateY(1px);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+  background: #c6d5e6;
+  color: #2a3a4a;
 }
 
 .menu-btn.large {
   font-size: 20px;
-  padding: 18px 20px;
+  padding: 20px;
 }
 
 /* === SÉLECTEUR DE NIVEAU === */
@@ -250,13 +266,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #e8eef5;
-  border: 3px solid #3d4d5d;
+  background: #dfedfd;
+  border: 3px solid #6b78a3;
   padding: 12px 15px;
 }
 
 #level-display {
-  color: #3d4d5d;
+  color: #5e6b98;
   font-size: 16px;
   font-weight: bold;
 }
@@ -264,7 +280,7 @@ body {
 .arrow-btn {
   background: transparent;
   border: none;
-  color: #3d4d5d;
+  color: #5e6b98;
   font-size: 22px;
   font-weight: bold;
   cursor: pointer;
@@ -273,20 +289,20 @@ body {
 }
 
 .arrow-btn:hover {
-  background: rgba(61, 77, 93, 0.1);
+  background: #c6d5e6;
   color: #2a3a4a;
 }
 
 /* === HIGH SCORES === */
 .high-scores-box {
-  background: #e8eef5;
-  border: 3px solid #3d4d5d;
+  background: #dfedfd;
+  border: 3px solid #6b78a3;
   padding: 12px 15px;
   flex-grow: 1;
 }
 
 .high-scores-title {
-  color: #3d4d5d;
+  color: #5e6b98;
   font-size: 14px;
   font-weight: bold;
   margin-bottom: 10px;
@@ -303,8 +319,8 @@ body {
   display: flex;
   justify-content: flex-end;
   padding: 6px 10px;
-  background: rgba(200, 212, 227, 0.6);
-  color: #4a5a6a;
+  background: #c7d5e9;
+  color: #5e6b98;
   font-size: 12px;
   font-weight: 100;
   font-family: FFF Forward, sans-serif;
@@ -317,20 +333,20 @@ body {
 }
 
 .icon-btn {
-  background: #e8eef5;
-  border: 3px solid #3d4d5d;
-  color: #3d4d5d;
+  border: 300px solid #6b78a3;
+  color: #5e6b98;
   font-size: 15px;
   cursor: pointer;
   transition: all 0.12s ease;
   flex: 1;
   display: flex;
   justify-content: center;
-  font-family: FFF Forward, sans-serif;
+  font-family: FFF Forward;
 }
 
 .icon-btn:hover {
-  background: #e8eef5;
+  background: #c6d5e6;
+  color: #2a3a4a;
 }
 
 #settings-btn {
@@ -339,13 +355,16 @@ body {
   border: transparent;
   background-color: transparent;
   margin-bottom: 10px;
+  filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.4));
 }
+
 
 #help-btn {
   font-size: 25px;
   align-items: center;
   border: transparent;
   background-color: transparent;
+  filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.4));
 }
 
 /* ===========================================
@@ -353,7 +372,7 @@ body {
    =========================================== */
 
 .pause-title {
-  color: #3d4d5d;
+  color: #5e6b98;
   font-size: 30px;
   font-weight: bold;
   text-align: center;
@@ -366,7 +385,7 @@ body {
    =========================================== */
 
 .help-title {
-  color: #3d4d5d;
+  color: #5e6b98;
   font-size: 20px;
   text-align: center;
   margin-bottom: 15px;
@@ -395,12 +414,13 @@ body {
 }
 
 .key-name {
+  color: #5e6b98;
   font-weight: bold;
   margin-right: 8px;
 }
 
 .key-desc {
-  color: #5a6a7a;
+  color: #5e6b98;
 }
 
 #menu-aide {
@@ -412,7 +432,7 @@ body {
    =========================================== */
 
 .options-title {
-  color: #3d4d5d;
+  color: #5e6b98;
   font-size: 20px;
   font-weight: bold;
   text-align: center;
@@ -439,13 +459,13 @@ body {
 .option-label {
   font-size: 10px;
   font-weight: bold;
-  color: #3d4d5d;
+  color: #5e6b98;
 }
 
 .key-btn {
-  background: #e8eef5;
-  border: 2px solid #3d4d5d;
-  color: #3d4d5d;
+  background: #dfedfd;
+  border: 2px solid #6c79a3;
+  color: #5e6b98;
   font-size: 9px;
   font-weight: bold;
   padding: 6px 12px;
@@ -456,7 +476,7 @@ body {
 }
 
 .key-btn:hover {
-  background: #d8e4f3;
+  background: #c6d5e6;
 }
 
 .key-btn.listening {
@@ -477,9 +497,9 @@ body {
 }
 
 .adjust-btn {
-  background: linear-gradient(180deg, #e8eef5 0%, #c8d4e3 100%);
-  border: 2px solid #3d4d5d;
-  color: #3d4d5d;
+  background: #dfedfd;
+  border: 2px solid #6c79a3;
+  color: #5e6b98;
   font-size: 15px;
   font-weight: bold;
   width: 28px;
@@ -492,13 +512,13 @@ body {
 }
 
 .adjust-btn:hover {
-  background: #d8e4f3;
+  background: #c6d5e6;
 }
 
 .option-value {
   font-size: 11px;
   font-weight: bold;
-  color: #3d4d5d;
+  color: #5e6b98;
   min-width: 60px;
   text-align: center;
 }
@@ -510,9 +530,9 @@ body {
 }
 
 .small-btn {
-  background: #e8eef5;
-  border: 2px solid #3d4d5d;
-  color: #3d4d5d;
+  background: #dfedfd;
+  border: 2px solid #6c79a3;
+  color: #5e6b98;
   font-size: 12px;
   font-weight: bold;
   padding: 8px 12px;
@@ -522,7 +542,7 @@ body {
 }
 
 .small-btn:hover {
-  background: #d8e4f3;
+  background: #c6d5e6;
 }
 
 #menu-options {
@@ -541,7 +561,7 @@ body {
 /* En pause : afficher le menu pause centré */
 .game-container.playing.paused .menus-overlay {
   display: flex !important;
-  background: rgba(220, 228, 236, 0.95);
+  background: #dfedfdcc;
 }
 
 .game-container.playing.paused #menu-pause {
@@ -556,37 +576,3 @@ body {
   position: relative;
 }
 
-/* ===========================================
-   RESPONSIVE
-   =========================================== */
-
-@media (max-width: 620px) {
-  .game-container {
-    flex-direction: column;
-    padding: 10px;
-  }
-  
-  .left-column, .right-column {
-    flex: none;
-    width: 100%;
-  }
-  
-  .game-area {
-    padding: 8px;
-  }
-  
-  #tetris {
-    width: 56%;
-    aspect-ratio: 360 / 648;
-  }
-  
-  .right-column {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  
-  .info-block {
-    flex: 1;
-    min-width: 120px;
-  }
-}

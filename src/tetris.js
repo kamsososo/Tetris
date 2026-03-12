@@ -508,56 +508,10 @@ function updateScore(linesCleared) {
 // ===========================================
 
 // Pattern de fond rayé (créé une seule fois)
-let bgPattern = null;
-
-function createBgPattern() {
-  const patternCanvas = document.createElement('canvas');
-  const patternCtx = patternCanvas.getContext('2d');
-  const cellSize = getCellSize();
-  const stripeWidth = Math.max(1, Math.round(cellSize * CONFIG.STRIPE_PCT / 100));
-  const patternSize = stripeWidth * 2;
-  
-  patternCanvas.width = patternSize;
-  patternCanvas.height = patternSize;
-  
-  // Couleurs des rayures
-  const color1 = '#cfd8e6'; // Plus clair
-  const color2 = '#c3cfe0'; // Plus foncé
-  
-  // Dessiner pixel par pixel pour un motif diagonal parfaitement seamless
-  const imageData = patternCtx.createImageData(patternSize, patternSize);
-  const data = imageData.data;
-  
-  // Convertir les couleurs hex en RGB
-  const rgb1 = { r: 207, g: 216, b: 230 }; // #cfd8e6
-  const rgb2 = { r: 195, g: 207, b: 224 }; // #c3cfe0
-  
-  for (let y = 0; y < patternSize; y++) {
-    for (let x = 0; x < patternSize; x++) {
-      const index = (y * patternSize + x) * 4;
-      // Rayures diagonales à 45° : utiliser (x + y) modulo taille du motif
-      const rgb = ((x + y) % patternSize) < stripeWidth ? rgb1 : rgb2;
-      data[index] = rgb.r;
-      data[index + 1] = rgb.g;
-      data[index + 2] = rgb.b;
-      data[index + 3] = 255;
-    }
-  }
-  
-  patternCtx.putImageData(imageData, 0, 0);
-  
-  return ctx.createPattern(patternCanvas, 'repeat');
-}
 
 function draw() {
-  // Créer le pattern si pas encore fait
-  if (!bgPattern) {
-    bgPattern = createBgPattern();
-  }
-  
-  // Fond rayé
-  ctx.fillStyle = bgPattern;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Fond transparent
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   
   // Terrain
   for (let row = 0; row < CONFIG.ARENA_HEIGHT; row++) {
@@ -588,12 +542,8 @@ function draw() {
 
 // Dessine l'arène avec des décalages verticaux en pixels par ligne (pour l'animation de chute)
 function drawArenaWithOffsets(rowOffsets) {
-  if (!bgPattern) {
-    bgPattern = createBgPattern();
-  }
 
-  ctx.fillStyle = bgPattern;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   for (let row = 0; row < CONFIG.ARENA_HEIGHT; row++) {
     for (let col = 0; col < CONFIG.ARENA_WIDTH; col++) {
@@ -982,7 +932,7 @@ function updateLevelDisplay() {
 // ===========================================
 
 function startDAS(action) {
-  if (dasTimers[action] || !gameRunning || gamePaused || linesClearingAnimation) return;
+  if (dasTimers[action] || !gameRunning || gamePaused) return;
   
   // Action immédiate
   executeAction(action);
