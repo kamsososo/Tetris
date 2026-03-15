@@ -7,7 +7,7 @@ const CONFIG = {
   // === DIMENSIONS DU TERRAIN ===
   ARENA_WIDTH: 10,      // Largeur en cellules
   ARENA_HEIGHT: 18,     // Hauteur en cellules
-  BORDER_SIZE: 7,     // Épaisseur des bordures en % de la taille d'une cellule
+  BORDER_SIZE: 10,     // Épaisseur des bordures en % de la taille d'une cellule
   BEVEL_PCT: 11.11,      // Épaisseur des bords 3D en % de la taille d'une cellule
   STRIPE_PCT: 11.11,     // Largeur des rayures du fond en % de la taille d'une cellule
 

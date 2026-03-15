@@ -26,6 +26,8 @@ let gameRunning = false;
 let gamePaused = false;
 let gameOver = false;
 let animationId = null;
+let arenaLogicalWidth = 0;
+let arenaLogicalHeight = 0;
 
 // Statistiques
 let gameStats = {
@@ -80,8 +82,17 @@ function getDropInterval(level) {
   return Math.max(100, CONFIG.BASE_DROP_INTERVAL / (1 + (level - 1) * 0.5));
 }
 
-function getCellSize(canv) {
-  return (canv || canvas).width / CONFIG.ARENA_WIDTH;
+function getCellSize() {
+  return arenaLogicalWidth / CONFIG.ARENA_WIDTH;
+}
+
+function getHalfBorderSize() {
+  const fullBorder = getCellSize() * CONFIG.BORDER_SIZE / 100;
+  return fullBorder / 2;
+}
+
+function getArenaPaddingPx() {
+  return Math.ceil(getHalfBorderSize());
 }
 
 // ===========================================
@@ -509,21 +520,60 @@ function updateScore(linesCleared) {
 
 // Pattern de fond rayé (créé une seule fois)
 
+function isCellOccupied(boardCol, boardRow, matrix, offsetX, offsetY) {
+  if (matrix) {
+    const localRow = boardRow - offsetY;
+    const localCol = boardCol - offsetX;
+    if (
+      localRow >= 0 &&
+      localRow < matrix.length &&
+      localCol >= 0 &&
+      localCol < matrix[localRow].length &&
+      matrix[localRow][localCol] !== 0
+    ) {
+      return true;
+    }
+  }
+
+  if (
+    boardRow < 0 ||
+    boardRow >= CONFIG.ARENA_HEIGHT ||
+    boardCol < 0 ||
+    boardCol >= CONFIG.ARENA_WIDTH
+  ) {
+    return false;
+  }
+
+  return arena[boardRow][boardCol] !== 0;
+}
+
+function getCellNeighbors(boardCol, boardRow, matrix, offsetX, offsetY) {
+  return {
+    top: isCellOccupied(boardCol, boardRow - 1, matrix, offsetX, offsetY),
+    bottom: isCellOccupied(boardCol, boardRow + 1, matrix, offsetX, offsetY),
+    left: isCellOccupied(boardCol - 1, boardRow, matrix, offsetX, offsetY),
+    right: isCellOccupied(boardCol + 1, boardRow, matrix, offsetX, offsetY)
+  };
+}
+
 function draw() {
   // Fond transparent
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const arenaPadding = getArenaPaddingPx();
+  ctx.save();
+  ctx.translate(arenaPadding, arenaPadding);
+
+  const drawActivePiece = currentPiece && !gamePaused;
+  const activeMatrix = drawActivePiece ? currentPiece.matrix : null;
+  const activeCol = drawActivePiece ? currentPiece.col : 0;
+  const activeRow = drawActivePiece ? currentPiece.row : 0;
   
   // Terrain
   for (let row = 0; row < CONFIG.ARENA_HEIGHT; row++) {
     for (let col = 0; col < CONFIG.ARENA_WIDTH; col++) {
       if (arena[row][col]) {
         const cellType = arena[row][col];
-        const neighbors = {
-          top:    row > 0 && arena[row - 1][col] !== 0,
-          bottom: row < CONFIG.ARENA_HEIGHT - 1 && arena[row + 1][col] !== 0,
-          left:   col > 0 && arena[row][col - 1] !== 0,
-          right:  col < CONFIG.ARENA_WIDTH - 1 && arena[row][col + 1] !== 0
-        };
+        const neighbors = getCellNeighbors(col, row, activeMatrix, activeCol, activeRow);
         // Flash blanc si la ligne est en cours de clignotement
         if (flashingRows.includes(row) && flashPhase) {
           drawCell(ctx, col, row, '#FFFFFF', neighbors);
@@ -535,30 +585,32 @@ function draw() {
   }
   
   // Pièce actuelle
-  if (currentPiece && !gamePaused) {
+  if (drawActivePiece) {
     drawPiece(ctx, currentPiece.matrix, currentPiece.col, currentPiece.row, COLORS[currentPiece.name]);
   }
+
+  ctx.restore();
 }
 
 // Dessine l'arène avec des décalages verticaux en pixels par ligne (pour l'animation de chute)
 function drawArenaWithOffsets(rowOffsets) {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const arenaPadding = getArenaPaddingPx();
+  ctx.save();
+  ctx.translate(arenaPadding, arenaPadding);
 
   for (let row = 0; row < CONFIG.ARENA_HEIGHT; row++) {
     for (let col = 0; col < CONFIG.ARENA_WIDTH; col++) {
       if (arena[row][col]) {
         const cellType = arena[row][col];
-        const neighbors = {
-          top:    row > 0 && arena[row - 1][col] !== 0,
-          bottom: row < CONFIG.ARENA_HEIGHT - 1 && arena[row + 1][col] !== 0,
-          left:   col > 0 && arena[row][col - 1] !== 0,
-          right:  col < CONFIG.ARENA_WIDTH - 1 && arena[row][col + 1] !== 0
-        };
+        const neighbors = getCellNeighbors(col, row);
         drawCell(ctx, col, row, COLORS[cellType], neighbors, rowOffsets[row] || 0);
       }
     }
   }
+
+  ctx.restore();
 }
 
 // Anime la chute des lignes restantes après effacement
@@ -591,31 +643,43 @@ function animateDrop(targetOffsets, duration) {
 
 function drawCell(context, col, row, color, neighbors, pixelOffsetY) {
   const cellSize = getCellSize();
-  const x = col * cellSize;
-  const y = row * cellSize + (pixelOffsetY || 0);
-  const size = cellSize;
+  const x = Math.round(col * cellSize);
+  const y = Math.round(row * cellSize + (pixelOffsetY || 0));
+  const size = Math.round((col + 1) * cellSize) - x;
   const n = neighbors || { top: false, right: false, bottom: false, left: false };
   
   // Bordure calculée depuis BORDER_SIZE (% de la taille d'une cellule)
-  const fullBorder = Math.round(cellSize * CONFIG.BORDER_SIZE / 100);
-  const halfBorder = Math.round(fullBorder / 2);
-  const bTop    = n.top    ? halfBorder : fullBorder;
-  const bRight  = n.right  ? halfBorder : fullBorder;
-  const bBottom = n.bottom ? halfBorder : fullBorder;
-  const bLeft   = n.left   ? halfBorder : fullBorder;
-  const bevel = Math.round(cellSize * CONFIG.BEVEL_PCT / 100);
+  const fullBorder = cellSize * CONFIG.BORDER_SIZE / 100;
+  const halfBorder = fullBorder / 2;
   
-  // Coordonnées internes (zone colorée)
-  const ix = x + bLeft;
-  const iy = y + bTop;
-  const iw = size - bLeft - bRight;
-  const ih = size - bTop - bBottom;
-  
-  // Contour noir
+  // Coeur de tuile strictement carre : inset constant sur les 4 cotes.
+  const colorInset = halfBorder;
+  const innerSize = Math.max(1, size - colorInset * 2);
+  const ix = x + colorInset;
+  const iy = y + colorInset;
+  const iw = innerSize;
+  const ih = innerSize;
+  const bevel = Math.max(1, Math.min(Math.round(cellSize * CONFIG.BEVEL_PCT / 100), Math.floor(innerSize / 2)));
+
+  // Demi-bordure noire interne constante (chaque tuile apporte sa moitie).
   context.fillStyle = '#000000';
   context.fillRect(x, y, size, size);
-  
-  // Cellule colorée avec marge pour le contour
+
+  // Cote expose: ajouter une demi-bordure externe pour retrouver une epaisseur complete.
+  if (!n.top) {
+    context.fillRect(x - halfBorder, y - halfBorder, size + halfBorder * 2, halfBorder);
+  }
+  if (!n.right) {
+    context.fillRect(x + size, y - halfBorder, halfBorder, size + halfBorder * 2);
+  }
+  if (!n.bottom) {
+    context.fillRect(x - halfBorder, y + size, size + halfBorder * 2, halfBorder);
+  }
+  if (!n.left) {
+    context.fillRect(x - halfBorder, y - halfBorder, halfBorder, size + halfBorder * 2);
+  }
+
+  // Fond colore carre, independant des adjacences.
   context.fillStyle = color;
   context.fillRect(ix, iy, iw, ih);
   
@@ -662,12 +726,9 @@ function drawPiece(context, matrix, offsetX, offsetY, color) {
   for (let row = 0; row < matrix.length; row++) {
     for (let col = 0; col < matrix[row].length; col++) {
       if (matrix[row][col] && offsetY + row >= 0) {
-        const neighbors = {
-          top:    row > 0 && matrix[row - 1][col] !== 0,
-          bottom: row < matrix.length - 1 && matrix[row + 1][col] !== 0,
-          left:   col > 0 && matrix[row][col - 1] !== 0,
-          right:  col < matrix[row].length - 1 && matrix[row][col + 1] !== 0
-        };
+        const boardCol = offsetX + col;
+        const boardRow = offsetY + row;
+        const neighbors = getCellNeighbors(boardCol, boardRow, matrix, offsetX, offsetY);
         drawCell(context, offsetX + col, offsetY + row, color, neighbors);
       }
     }
@@ -704,83 +765,32 @@ function drawNextPiece() {
   // Centrer la pièce
   const offsetX = (nextCanvas.width - pieceWidth * cellSize) / 2;
   const offsetY = (nextCanvas.height - pieceHeight * cellSize) / 2;
+
+  nextCtx.save();
+  nextCtx.translate(Math.round(offsetX), Math.round(offsetY));
   
-  // Dessiner chaque cellule avec bordures adaptatives
+  // Reutilise drawCell pour conserver exactement le meme rendu que le plateau.
   for (let r = minRow; r <= maxRow; r++) {
     for (let c = minCol; c <= maxCol; c++) {
       if (matrix[r][c]) {
-        const x = offsetX + (c - minCol) * cellSize;
-        const y = offsetY + (r - minRow) * cellSize;
-        const bevel = Math.round(cellSize * CONFIG.BEVEL_PCT / 100);
-        
-        // Déterminer les voisins dans la matrice
+        const localRow = r - minRow;
+        const localCol = c - minCol;
         const hasTop    = r > 0 && matrix[r - 1][c] !== 0;
         const hasBottom = r < matrix.length - 1 && matrix[r + 1][c] !== 0;
         const hasLeft   = c > 0 && matrix[r][c - 1] !== 0;
         const hasRight  = c < matrix[r].length - 1 && matrix[r][c + 1] !== 0;
-        
-        // Bordure calculée depuis BORDER_SIZE (% de CELL_SIZE)
-        const fullBorder = Math.round(cellSize * CONFIG.BORDER_SIZE / 100);
-        const halfBorder = Math.round(fullBorder / 2);
-        const bTop    = hasTop    ? halfBorder : fullBorder;
-        const bRight  = hasRight  ? halfBorder : fullBorder;
-        const bBottom = hasBottom ? halfBorder : fullBorder;
-        const bLeft   = hasLeft   ? halfBorder : fullBorder;
-        
-        // Coordonnées internes (zone colorée)
-        const ix = x + bLeft;
-        const iy = y + bTop;
-        const iw = cellSize - bLeft - bRight;
-        const ih = cellSize - bTop - bBottom;
-        
-        // Contour noir
-        nextCtx.fillStyle = '#000000';
-        nextCtx.fillRect(x, y, cellSize, cellSize);
-        
-        // Cellule colorée
-        nextCtx.fillStyle = color;
-        nextCtx.fillRect(ix, iy, iw, ih);
-        
-        // Effet 3D - bord clair en haut (trapèze)
-        nextCtx.fillStyle = 'rgba(255,255,255,0.35)';
-        nextCtx.beginPath();
-        nextCtx.moveTo(ix, iy);
-        nextCtx.lineTo(ix + iw, iy);
-        nextCtx.lineTo(ix + iw - bevel, iy + bevel);
-        nextCtx.lineTo(ix + bevel, iy + bevel);
-        nextCtx.closePath();
-        nextCtx.fill();
-        
-        // Effet 3D - bord clair à droite (trapèze)
-        nextCtx.beginPath();
-        nextCtx.moveTo(ix + iw, iy);
-        nextCtx.lineTo(ix + iw, iy + ih);
-        nextCtx.lineTo(ix + iw - bevel, iy + ih - bevel);
-        nextCtx.lineTo(ix + iw - bevel, iy + bevel);
-        nextCtx.closePath();
-        nextCtx.fill();
-        
-        // Effet 3D - bord sombre en bas (trapèze)
-        nextCtx.fillStyle = 'rgba(0,0,0,0.25)';
-        nextCtx.beginPath();
-        nextCtx.moveTo(ix + iw, iy + ih);
-        nextCtx.lineTo(ix, iy + ih);
-        nextCtx.lineTo(ix + bevel, iy + ih - bevel);
-        nextCtx.lineTo(ix + iw - bevel, iy + ih - bevel);
-        nextCtx.closePath();
-        nextCtx.fill();
-        
-        // Effet 3D - bord sombre à gauche (trapèze)
-        nextCtx.beginPath();
-        nextCtx.moveTo(ix, iy + ih);
-        nextCtx.lineTo(ix, iy);
-        nextCtx.lineTo(ix + bevel, iy + bevel);
-        nextCtx.lineTo(ix + bevel, iy + ih - bevel);
-        nextCtx.closePath();
-        nextCtx.fill();
+
+        drawCell(nextCtx, localCol, localRow, color, {
+          top: hasTop,
+          right: hasRight,
+          bottom: hasBottom,
+          left: hasLeft
+        });
       }
     }
   }
+
+  nextCtx.restore();
 }
 
 // ===========================================
@@ -1144,6 +1154,13 @@ function initEventListeners() {
 
 function init() {
   canvas = document.getElementById('tetris');
+  ctx = canvas.getContext('2d');
+
+  arenaLogicalWidth = canvas.width;
+  arenaLogicalHeight = canvas.height;
+  const arenaPadding = getArenaPaddingPx();
+  canvas.width = arenaLogicalWidth + arenaPadding * 2;
+  canvas.height = arenaLogicalHeight + arenaPadding * 2;
   ctx = canvas.getContext('2d');
   
   nextCanvas = document.getElementById('next-piece');

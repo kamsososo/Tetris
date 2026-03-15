@@ -84,7 +84,7 @@ body {
     );
 }
 
-/* SI JE VEUX MAIA EN FOND (mais ça rend le jeu moins lisible) :
+/* SI JE VEUX MAIA EN FOND:
   background-image: url('img/maia.png');
   background-size: cover; 
   background-position: center;
