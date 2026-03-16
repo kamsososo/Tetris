@@ -827,6 +827,7 @@ function gameLoop(timestamp = 0) {
 
 function startGame() {
   createArena();
+  document.getElementById('next-piece').classList.remove('hidden');
   tetrominoSequence = [];
   
   gameStats = {
@@ -841,6 +842,9 @@ function startGame() {
   gameRunning = true;
   dropCounter = 0;
   lastTime = 0;
+  
+  // Masquer l'overlay Game Over
+  document.getElementById('game-over-overlay').classList.add('hidden');
   
   // Préparer les pièces
   nextPiece = getNextTetromino();
@@ -884,6 +888,8 @@ function quitGame() {
   }
   
   document.querySelector('.game-container').classList.remove('playing', 'paused');
+  document.getElementById('game-over-overlay').classList.add('hidden');
+  document.getElementById('next-piece').classList.add('hidden');
   createArena();
   draw();
   showMenu('accueil');
@@ -901,26 +907,11 @@ function triggerGameOver() {
   saveHighScore(gameStats.score);
   // playSound('gameOver');
   
-  // Afficher Game Over sur le canvas (positions et tailles en % du canvas)
-  const cw = canvas.width;
-  const ch = canvas.height;
-  
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-  ctx.fillRect(0, ch * 0.5 - ch * 0.0772, cw, ch * 0.1543);
-  
-  ctx.fillStyle = '#ff4444';
-  ctx.font = `${Math.round(ch * 0.037)}px pixel bold`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('GAME OVER', cw / 2, ch * 0.5 - ch * 0.0231);
-  
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `${Math.round(ch * 0.0216)}px Arial`;
-  ctx.fillText(`Score: ${formatNumber(gameStats.score)}`, cw / 2, ch * 0.5 + ch * 0.0231);
-  
-  ctx.font = `${Math.round(ch * 0.0185)}px Arial`;
-  ctx.fillStyle = '#aaaaaa';
-  ctx.fillText('Appuyez sur ESPACE pour rejouer', cw / 2, ch * 0.5 + ch * 0.0617);
+  // Afficher l'overlay Game Over
+  const overlay = document.getElementById('game-over-overlay');
+  const scoreElement = document.getElementById('game-over-score');
+  scoreElement.textContent = `score: ${formatNumber(gameStats.score)}`;
+  overlay.classList.remove('hidden');
 }
 
 // ===========================================
@@ -998,7 +989,7 @@ function handleKeyDown(e) {
     return;
   }
   
-  // Touche Échap = Pause
+  // Touche Échap = Pause si le jeu est en cours OU retour au menu si Game Over
   if (key === 'Escape') {
     if (gameRunning && !gameOver) {
       if (gamePaused) {
@@ -1011,6 +1002,9 @@ function handleKeyDown(e) {
         pauseGame();
       }
     }
+    else if (gameOver) {
+      quitGame();
+    }
     return;
   }
   
@@ -1019,6 +1013,8 @@ function handleKeyDown(e) {
     startGame();
     return;
   }
+
+
   
   // Actions de jeu avec DAS
   if (!keysPressed[key]) {

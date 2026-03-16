@@ -572,6 +572,54 @@ body {
   display: none !important;
 }
 
+/* === OVERLAY GAME OVER === */
+#game-over-overlay {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #dfedfdcc;
+  z-index: 100;
+}
+
+.game-over-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  background: rgba(201, 215, 240, 0.95);
+  border: 5px solid #6b78a3;
+  padding: 40px;
+}
+
+.game-over-title {
+  font-family: 'FFF Forward', sans-serif;
+  font-size: 35px;
+  color: #ff4444;
+  text-align: center;
+}
+
+.game-over-score {
+  font-family: 'FFF Forward', sans-serif;
+  font-size: 24px;
+  color: #5e6b98;
+  text-align: center;
+}
+
+.game-over-hint {
+  display: flex;
+  font-family: 'FFF Forward', sans-serif;
+  font-size: 16px;
+  color: #5e6b98;
+  width: 100%;
+  justify-content: space-between;
+}
+
+
 .game-container {
   position: relative;
 }
