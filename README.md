@@ -15,8 +15,7 @@ Un clone de **Tetris N-Blox**, développé en HTML5 / CSS3 / JavaScript vanilla 
 - **Touches reconfigurables** depuis le menu Options
 - **Système audio** avec effets sonores et musique (préparé)
 - **Menus complets** : Accueil, Pause, Options, Aide
-- **Rendu Canvas** avec effets 3D biseautés sur les pièces
-- **Police personnalisée** (FFF Forward)
+- **Police** :FFF Forward
 
 ## Structure du projet
 
@@ -37,7 +36,7 @@ Tetris/
 
 ## Lancement
 
-Aucun serveur ni build n'est requis. Il suffit d'ouvrir le fichier HTML dans un navigateur :
+Il suffit d'ouvrir le fichier HTML dans un navigateur :
 
 ```bash
 open src/index.html        # macOS
@@ -46,19 +45,6 @@ xdg-open src/index.html   # Linux
 ```
 
 > **Astuce :** pour le support audio complet, utilisez un serveur local (ex. `npx serve src` ou l'extension *Live Server* de VS Code).
-
-## Contrôles par défaut
-
-| Touche | Action |
-|--------|--------|
-| ← | Déplacer à gauche |
-| → | Déplacer à droite |
-| ↑ | Rotation |
-| ↓ | Descente douce |
-| Espace | Descente rapide (hard drop) |
-| Échap | Pause |
-
-Les touches sont modifiables dans le menu **Options**.
 
 ## Améliorations prévues
 
