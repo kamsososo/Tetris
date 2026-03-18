@@ -16,7 +16,7 @@ const CONFIG = {
   LINES_PER_LEVEL: 10,  // Lignes pour monter de niveau
 
   // === HIGH SCORES ===
-  MAX_HIGH_SCORES: 10,   // Nombre de scores sauvegardés
+  MAX_HIGH_SCORES: 5,   // Nombre de scores sauvegardés
 
   // === VITESSE ===
   BASE_DROP_INTERVAL: 500,  // Intervalle de base (ms)

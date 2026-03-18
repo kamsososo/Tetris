@@ -8,7 +8,7 @@
    - Auto-répétition des touches (DAS/ARR)
    - Touches reconfigurables
    - Système audio (préparé)
-   - Menus : Accueil, Pause, Options, Aide
+   - Menus : Accueil, Pause, Options, Statistiques (STT)
    ======================================== */
 
 // Les constantes CONFIG, COLORS, TETROMINOS, DEFAULT_OPTIONS et KEY_NAMES sont dans js/config.js
@@ -41,7 +41,7 @@ let gameStats = {
 let options = JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
 
 // État des menus
-let currentMenu = 'accueil'; // 'accueil', 'pause', 'options', 'aide'
+let currentMenu = 'accueil'; // 'accueil', 'pause', 'options', 'STT'
 let previousMenu = null;
 let waitingForKey = null; // Action en attente de nouvelle touche
 
@@ -61,6 +61,33 @@ let linesClearingAnimation = false; // true = animation en cours
 
 // Audio
 let audioMuted = false;
+
+function setStatsValuesVisible(visible) {
+  document.querySelectorAll('.stat-value').forEach(el => {
+    el.classList.toggle('hidden', !visible);
+  });
+}
+
+function syncAudioSettings() {
+  if (typeof audioManager === 'undefined') return;
+  audioManager.setSfxVolume(options.sfxVolume);
+  audioManager.setMusicVolume(options.musicVolume);
+  audioManager.muted = audioMuted;
+}
+
+function playSound(soundName) {
+  if (audioMuted || typeof audioManager === 'undefined') return;
+  audioManager.play(soundName);
+}
+
+function startMusic() {
+  if (typeof audioManager === 'undefined') return;
+  if (audioMuted) {
+    audioManager.stopMusic();
+    return;
+  }
+  audioManager.playMusic(options.musicType);
+}
 
 // ===========================================
 // FONCTIONS UTILITAIRES
@@ -121,6 +148,10 @@ function saveOptions() {
 function resetOptions() {
   options = JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
   saveOptions();
+  syncAudioSettings();
+  if (gameRunning && !gamePaused && !gameOver) {
+    startMusic();
+  }
   updateOptionsDisplay();
 }
 
@@ -153,12 +184,21 @@ function adjustOption(target, direction) {
       break;
     case 'sfxVolume':
       options.sfxVolume = Math.max(0, Math.min(100, options.sfxVolume + dir * 10));
+      if (typeof audioManager !== 'undefined') {
+        audioManager.setSfxVolume(options.sfxVolume);
+      }
       break;
     case 'musicVolume':
       options.musicVolume = Math.max(0, Math.min(100, options.musicVolume + dir * 10));
+      if (typeof audioManager !== 'undefined') {
+        audioManager.setMusicVolume(options.musicVolume);
+      }
       break;
     case 'musicType':
       options.musicType = Math.max(1, Math.min(3, options.musicType + dir));
+      if (gameRunning && !gamePaused && !gameOver) {
+        startMusic();
+      }
       break;
   }
   
@@ -211,7 +251,7 @@ function showMenu(menuName) {
   // Cacher tous les menus
   document.getElementById('menu-accueil').classList.add('hidden');
   document.getElementById('menu-pause').classList.add('hidden');
-  document.getElementById('menu-aide').classList.add('hidden');
+  document.getElementById('menu-STT').classList.add('hidden');
   document.getElementById('menu-options').classList.add('hidden');
   
   // Afficher le menu demandé
@@ -314,7 +354,6 @@ function movePiece(direction) {
   const newCol = currentPiece.col + direction;
   if (isValidMove(currentPiece.matrix, currentPiece.row, newCol)) {
     currentPiece.col = newCol;
-    // playSound('move');
   }
 }
 
@@ -332,7 +371,7 @@ function rotatePiece() {
     if (isValidMove(rotated, currentPiece.row, currentPiece.col)) {
       currentPiece.matrix = rotated;
       currentPiece.rotationState = 0;
-      // playSound('rotate');
+      playSound('rotate');
       return;
     }
     // Wall kick pour rotation inverse
@@ -341,7 +380,7 @@ function rotatePiece() {
         currentPiece.matrix = rotated;
         currentPiece.col += kick;
         currentPiece.rotationState = 0;
-        // playSound('rotate');
+        playSound('rotate');
         return;
       }
     }
@@ -357,7 +396,7 @@ function rotatePiece() {
     } else {
       currentPiece.rotationState = (currentPiece.rotationState + 1) % 4;
     }
-    // playSound('rotate');
+    playSound('rotate');
     return;
   }
   
@@ -371,7 +410,7 @@ function rotatePiece() {
       } else {
         currentPiece.rotationState = (currentPiece.rotationState + 1) % 4;
       }
-      // playSound('rotate');
+      playSound('rotate');
       return;
     }
   }
@@ -396,7 +435,7 @@ function hardDrop() {
     currentPiece.row++;
   }
   placePiece();
-  // playSound('drop');
+  playSound('drop');
 }
 
 async function placePiece() {
@@ -495,7 +534,7 @@ async function clearLines() {
 
   linesClearingAnimation = false;
 
-  // playSound(fullRows.length === 4 ? 'tetris' : 'clear');
+  playSound(fullRows.length === 4 ? 'tetris' : 'clear');
 
   return fullRows.length;
 }
@@ -508,7 +547,7 @@ function updateScore(linesCleared) {
   const newLevel = gameStats.startLevel + Math.floor(gameStats.lines / CONFIG.LINES_PER_LEVEL);
   if (newLevel > gameStats.level && newLevel <= CONFIG.MAX_LEVEL) {
     gameStats.level = newLevel;
-    // playSound('levelUp');
+    playSound('levelUp');
   }
   
   updateDisplay();
@@ -828,6 +867,8 @@ function gameLoop(timestamp = 0) {
 function startGame() {
   createArena();
   document.getElementById('next-piece').classList.remove('hidden');
+  document.getElementById('pause-btn').classList.remove('hidden');
+  setStatsValuesVisible(true);
   tetrominoSequence = [];
   
   gameStats = {
@@ -855,6 +896,8 @@ function startGame() {
   
   updateDisplay();
   drawNextPiece();
+  syncAudioSettings();
+  startMusic();
   
   animationId = requestAnimationFrame(gameLoop);
 }
@@ -867,6 +910,9 @@ function pauseGame() {
     cancelAnimationFrame(animationId);
   }
   document.querySelector('.game-container').classList.add('paused');
+  if (typeof audioManager !== 'undefined') {
+    audioManager.toggleMusicPause(true);
+  }
   showMenu('pause');
 }
 
@@ -876,6 +922,9 @@ function resumeGame() {
   gamePaused = false;
   document.querySelector('.game-container').classList.remove('paused');
   document.getElementById('menu-pause').classList.add('hidden');
+  if (!audioMuted && typeof audioManager !== 'undefined') {
+    audioManager.toggleMusicPause(false);
+  }
   lastTime = performance.now();
   animationId = requestAnimationFrame(gameLoop);
 }
@@ -886,7 +935,12 @@ function quitGame() {
   if (animationId) {
     cancelAnimationFrame(animationId);
   }
-  
+  if (typeof audioManager !== 'undefined') {
+    audioManager.stopMusic();
+
+  }
+  setStatsValuesVisible(false);
+  document.getElementById('pause-btn').classList.add('hidden');
   document.querySelector('.game-container').classList.remove('playing', 'paused');
   document.getElementById('game-over-overlay').classList.add('hidden');
   document.getElementById('next-piece').classList.add('hidden');
@@ -894,6 +948,11 @@ function quitGame() {
   draw();
   showMenu('accueil');
   displayHighScores();
+}
+
+function restartGame() {
+  quitGame();
+  startGame();
 }
 
 function triggerGameOver() {
@@ -905,7 +964,7 @@ function triggerGameOver() {
   }
   
   saveHighScore(gameStats.score);
-  // playSound('gameOver');
+  playSound('gameOver');
   
   // Afficher l'overlay Game Over
   const overlay = document.getElementById('game-over-overlay');
@@ -1076,9 +1135,9 @@ function initEventListeners() {
     showMenu('options');
   });
   
-  document.getElementById('help-btn').addEventListener('click', () => {
+  document.getElementById('STT-btn').addEventListener('click', () => {
     previousMenu = 'accueil';
-    showMenu('aide');
+    showMenu('STT');
   });
   
   // Menu Pause
@@ -1089,16 +1148,13 @@ function initEventListeners() {
     showMenu('options');
   });
   
-  document.getElementById('pause-help-btn').addEventListener('click', () => {
-    previousMenu = 'pause';
-    showMenu('aide');
-  });
+  document.getElementById('pause-restart-btn').addEventListener('click', restartGame);
   
   document.getElementById('quit-btn').addEventListener('click', quitGame);
-  
-  // Menu Aide
-  document.getElementById('help-done-btn').addEventListener('click', showPreviousMenu);
-  
+
+  // Menu Statistiques
+  document.getElementById('STT-done-btn').addEventListener('click', showPreviousMenu);
+
   // Menu Options
   document.getElementById('options-done-btn').addEventListener('click', showPreviousMenu);
   document.getElementById('reset-scores-btn').addEventListener('click', resetHighScores);
@@ -1133,9 +1189,16 @@ function initEventListeners() {
   });
   
   document.getElementById('sound-toggle').addEventListener('click', () => {
-    audioMuted = !audioMuted;
-    const btn = document.getElementById('sound-toggle');
-    btn.textContent = audioMuted ? '🔇' : '🔊';
+    if (typeof audioManager !== 'undefined') {
+      audioMuted = audioManager.toggleMute();
+      if (!audioMuted && gameRunning && !gamePaused && !gameOver) {
+        startMusic();
+      }
+    } else {
+      audioMuted = !audioMuted;
+    }
+    const icon = document.getElementById('sound-icon');
+    icon.src = audioMuted ? 'img/mute.png' : 'img/volume.png';
     btn.classList.toggle('muted', audioMuted);
   });
   
@@ -1163,6 +1226,12 @@ function init() {
   nextCtx = nextCanvas.getContext('2d');
   
   loadOptions();
+  syncAudioSettings();
+  if (typeof audioManager !== 'undefined') {
+    audioManager.loadSounds().catch(() => {
+      console.warn('Chargement audio incomplet.');
+    });
+  }
   createArena();
   displayHighScores();
   updateDisplay();
@@ -1171,6 +1240,9 @@ function init() {
   
   draw();
   
+  document.getElementById('pause-btn').classList.add('hidden');
+  setStatsValuesVisible(false);
+
   console.log('Tetris initialisé !');
 }
 

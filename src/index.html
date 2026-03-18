@@ -37,50 +37,54 @@
         </div>
         
         <div class="bottom-buttons">
-          <button id="settings-btn" class="icon-btn" title="Options">⚙</button>
-          <button id="help-btn" class="icon-btn" title="Aide">?</button>
+          <button id="settings-btn" class="icon-btn" title="Options">
+            <img src="img/settings.png" alt="Options">
+          </button>
+          <button id="STT-btn" class="icon-btn" title="Statistiques">
+            <img src="img/statistics.png" alt="Statistiques">
+          </button>
         </div>
       </div>
-      
+
       <!-- MENU PAUSE -->
       <div id="menu-pause" class="panel-content hidden">
         <div class="pause-title">pause</div>
         <button id="resume-btn" class="menu-btn">reprendre</button>
+        <button id="pause-restart-btn" class="menu-btn">recommencer</button>
         <button id="pause-options-btn" class="menu-btn">options</button>
-        <button id="pause-help-btn" class="menu-btn">aide</button>
         <button id="quit-btn" class="menu-btn">quitter</button>
       </div>
       
-      <!-- MENU AIDE -->
-      <div id="menu-aide" class="panel-content hidden">
-        <div class="help-title">contrôles</div>
-        <div class="help-content">
-          <div class="help-line">
+      <!-- MENU STATISTIQUES -->
+      <div id="menu-STT" class="panel-content hidden">
+        <div class="STT-title">contrôles</div>
+        <div class="STT-content">
+          <div class="STT-line">
             <span class="key-name">Flèche gauche</span>
             <span class="key-desc">Déplacer à gauche</span>
           </div>
-          <div class="help-line">
+          <div class="STT-line">
             <span class="key-name">Flèche droite</span>
             <span class="key-desc">Déplacer à droite</span>
           </div>
-          <div class="help-line">
+          <div class="STT-line">
             <span class="key-name">Flèche haut</span>
             <span class="key-desc">Rotation</span>
           </div>
-          <div class="help-line">
+          <div class="STT-line">
             <span class="key-name">Flèche bas</span>
             <span class="key-desc">Descente douce</span>
           </div>
-          <div class="help-line">
+          <div class="STT-line">
             <span class="key-name">Espace</span>
             <span class="key-desc">Descente rapide</span>
           </div>
-          <div class="help-line separator">
-            <span class="key-name">Escape</span>
+          <div class="STT-line separator">
+            <span class="key-name">Échap</span>
             <span class="key-desc">Pause</span>
           </div>
         </div>
-        <button id="help-done-btn" class="menu-btn">terminé</button>
+        <button id="STT-done-btn" class="menu-btn">terminé</button>
       </div>
       
       <!-- MENU OPTIONS -->
@@ -175,7 +179,7 @@
             <span class="go-key-name">ESPACE</span>
             <span class="go-key-desc">rejouer</span></div>
           <div class="game-over-hint">
-            <span class="go-key-name">ESCAPE</span>
+            <span class="go-key-name">ÉCHAP</span>
             <span class="go-key-desc">revenir au menu</span></div>
         </div>
       </div>
@@ -208,7 +212,9 @@
       <!-- Contrôles en jeu -->
       <div class="info-block controls-block">
         <button id="pause-btn" class="pause-btn">pause</button>
-        <button id="sound-toggle" class="sound-btn" title="Son">🔊</button>
+        <button id="sound-toggle" class="sound-btn" title="Son">
+          <img id="sound-icon" src="img/volume.png" alt="Son">
+        </button>
       </div>
       
       <!-- Logo -->
@@ -221,6 +227,7 @@
   </div>
 
   <script src="js/config.js"></script>
+  <script src="js/audio.js"></script>
   <script src="tetris.js"></script>
 </body>
 </html>

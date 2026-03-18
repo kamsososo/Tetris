@@ -14,19 +14,17 @@ class AudioManager {
     
     // Chemins des fichiers audio (à fournir)
     this.soundPaths = {
-      move: 'audio/move.mp3',
       rotate: 'audio/rotate.mp3',
       drop: 'audio/drop.mp3',
       clear: 'audio/clear.mp3',
       tetris: 'audio/tetris.mp3',
       levelUp: 'audio/levelup.mp3',
-      gameOver: 'audio/gameover.mp3'
+      gameOver: 'audio/game over.mp3'
     };
     
     this.musicPaths = {
       1: 'audio/music1.mp3',
       2: 'audio/music2.mp3',
-      3: 'audio/music3.mp3'
     };
   }
 

@@ -44,6 +44,18 @@ body {
   display: none !important;
 }
 
+#pause-btn.hidden {
+display: block !important;
+visibility: hidden;
+pointer-events: none;
+}
+
+#stat-value.hidden {
+display: block !important;
+visibility: hidden;
+pointer-events: none;
+}
+
 /* === CONTENEUR PRINCIPAL === */
 .game-container {
   display: flex;
@@ -184,6 +196,8 @@ body {
 /* === CONTRÔLES (PAUSE + SON) === */
 .controls-block {
   display: flex;
+  background: transparent;
+  border: none;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
@@ -193,7 +207,7 @@ body {
   background: transparent;
   border: none;
   color: #5e6b98;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: bold;
   cursor: pointer;
   padding: 8px 15px;
@@ -207,21 +221,26 @@ body {
 }
 
 .sound-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
-  font-size: 22px;
   cursor: pointer;
   padding: 5px;
-  opacity: 0.7;
-  transition: opacity 0.15s ease;
 }
 
-.sound-btn:hover {
-  opacity: 1;
+.sound-btn img{
+  width: 75%;
+  height: auto;
+  justify-content: right;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
 }
 
-.sound-btn.muted {
-  opacity: 0.4;
+.sound-btn img:hover {
+  filter: brightness(0.6);
 }
 
 /* === LOGO === */
@@ -333,7 +352,6 @@ body {
 }
 
 .icon-btn {
-  border: 300px solid #6b78a3;
   color: #5e6b98;
   font-size: 15px;
   cursor: pointer;
@@ -350,22 +368,49 @@ body {
 }
 
 #settings-btn {
-  font-size: 40px;
+  display: flex;
   align-items: center;
-  border: transparent;
-  background-color: transparent;
-  margin-bottom: 10px;
-  filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.4));
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding-top: 15px;
 }
 
-
-#help-btn {
-  font-size: 25px;
-  align-items: center;
-  border: transparent;
-  background-color: transparent;
-  filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.4));
+#settings-btn img{
+  width: 50%;
+  height: auto;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
 }
+
+#settings-btn img:hover {
+  filter: brightness(0.6);
+}
+
+#STT-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+}
+
+#STT-btn img{
+  width: 75%;
+  height: auto;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+}
+
+#STT-btn img:hover {
+  filter: brightness(0.6);
+}
+
 
 /* ===========================================
    MENU PAUSE
@@ -381,10 +426,10 @@ body {
 }
 
 /* ===========================================
-   MENU AIDE
+   MENU STATISTIQUES
    =========================================== */
 
-.help-title {
+.STT-title {
   color: #5e6b98;
   font-size: 20px;
   text-align: center;
@@ -392,13 +437,13 @@ body {
   font-family: FFF Forward, sans-serif;
 }
 
-.help-content {
+.STT-content {
   background: transparent;
   padding: 10px 0;
   flex-grow: 1;
 }
 
-.help-line {
+.STT-line {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -407,7 +452,7 @@ body {
   color: #3d4d5d;
 }
 
-.help-line.separator {
+.STT-line.separator {
   margin-top: 15px;
   padding-top: 15px;
   border-top: 1px solid rgba(61, 77, 93, 0.2);
@@ -423,7 +468,7 @@ body {
   color: #5e6b98;
 }
 
-#menu-aide {
+#menu-STT {
   width: 330px;
 }
 
@@ -564,12 +609,12 @@ body {
   background: #dfedfdcc;
 }
 
-.game-container.playing.paused #menu-pause {
-  display: flex !important;
+.game-container.playing.paused .panel-content {
+  display: none !important;
 }
 
-.game-container.playing.paused .panel-content:not(#menu-pause) {
-  display: none !important;
+.game-container.playing.paused .panel-content:not(.hidden) {
+  display: flex !important;
 }
 
 /* === OVERLAY GAME OVER === */
@@ -589,7 +634,7 @@ body {
 .game-over-content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   align-items: center;
   background: rgba(201, 215, 240, 0.95);
   border: 5px solid #6b78a3;
@@ -608,6 +653,7 @@ body {
   font-size: 24px;
   color: #5e6b98;
   text-align: center;
+  padding: 20px;
 }
 
 .game-over-hint {
