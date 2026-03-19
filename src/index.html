@@ -57,31 +57,50 @@
       
       <!-- MENU STATISTIQUES -->
       <div id="menu-STT" class="panel-content hidden">
-        <div class="STT-title">contrôles</div>
+        <div class="STT-title">statistiques</div>
         <div class="STT-content">
-          <div class="STT-line">
-            <span class="key-name">Flèche gauche</span>
-            <span class="key-desc">Déplacer à gauche</span>
+          <div class="stt-kpi-grid">
+            <div class="stt-kpi-card">
+              <div class="stt-kpi-label">parties jouées</div>
+              <div id="stt-total-games" class="stt-kpi-value">0</div>
+            </div>
+            <div class="stt-kpi-card">
+              <div class="stt-kpi-label">meilleur score</div>
+              <div id="stt-best-score" class="stt-kpi-value">0</div>
+            </div>
+            <div class="stt-kpi-card">
+              <div class="stt-kpi-label">score moyen</div>
+              <div id="stt-average-score" class="stt-kpi-value">0</div>
+            </div>
+            <div class="stt-kpi-card">
+              <div class="stt-kpi-label">lignes totales</div>
+              <div id="stt-total-lines" class="stt-kpi-value">0</div>
+            </div>
           </div>
-          <div class="STT-line">
-            <span class="key-name">Flèche droite</span>
-            <span class="key-desc">Déplacer à droite</span>
-          </div>
-          <div class="STT-line">
-            <span class="key-name">Flèche haut</span>
-            <span class="key-desc">Rotation</span>
-          </div>
-          <div class="STT-line">
-            <span class="key-name">Flèche bas</span>
-            <span class="key-desc">Descente douce</span>
-          </div>
-          <div class="STT-line">
-            <span class="key-name">Espace</span>
-            <span class="key-desc">Descente rapide</span>
-          </div>
-          <div class="STT-line separator">
-            <span class="key-name">Échap</span>
-            <span class="key-desc">Pause</span>
+
+          <div class="stt-heatmap-box">
+            <div class="stt-heatmap-header-row">
+              <div id="stt-heatmap-title" class="stt-heatmap-header">activité</div>
+              <div class="stt-year-selector">
+                <button id="stt-year-prev" class="stt-year-btn" aria-label="Année précédente">&lt;</button>
+                <span id="stt-year-display" class="stt-year-display">2026</span>
+                <button id="stt-year-next" class="stt-year-btn" aria-label="Année suivante">&gt;</button>
+              </div>
+            </div>
+            <div id="stt-heatmap-months" class="stt-heatmap-months" aria-hidden="true"></div>
+            <div class="stt-heatmap-body">
+              <div class="stt-heatmap-days" aria-hidden="true">
+                <span>lun</span>
+                <span>mar</span>
+                <span>mer</span>
+                <span>jeu</span>
+                <span>ven</span>
+                <span>sam</span>
+                <span>dim</span>
+              </div>
+              <div id="stt-heatmap-grid" class="stt-heatmap-grid" role="img" aria-label="Heat map des parties jouées"></div>
+            </div>
+            <div id="stt-heatmap-tooltip" class="stt-heatmap-tooltip">survole une case pour voir les détails</div>
           </div>
         </div>
         <button id="STT-done-btn" class="menu-btn">terminé</button>

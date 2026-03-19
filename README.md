@@ -9,11 +9,11 @@ Un clone de **Tetris N-Blox**, développé en HTML5 / CSS3 / JavaScript vanilla.
 ## Fonctionnalités
 
 - **10 niveaux** avec vitesse de chute progressive
-- **Scoring standard Tetris** (100 / 300 / 500 / 800 points × niveau)
-- **Tableau des meilleurs scores** sauvegardés en `localStorage`
+- **Calcul des scores standard** 100 / 300 / 500 / 800 points × niveau
+- **Statistiques de jeu** depuis le menu Statistiques
 - **Auto-répétition des touches** (DAS / ARR) configurable
 - **Touches reconfigurables** depuis le menu Options
-- **Système audio** avec effets sonores et musiques (préparé)
+- **Système audio** avec effets sonores et musiques (custom)
 - **Menus** : Accueil, Pause, Options, Statistiques
 - **Police** :FFF Forward
 
@@ -36,7 +36,7 @@ Tetris/
 
 ## Lancement
 
-Il suffit d'ouvrir le fichier HTML dans un navigateur :
+Ouvrir le fichier HTML dans un navigateur :
 
 ```bash
 open src/index.html        # macOS

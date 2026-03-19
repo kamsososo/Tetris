@@ -37,6 +37,12 @@ let gameStats = {
   startLevel: 1
 };
 
+const GLOBAL_STATS_STORAGE_KEY = 'tetrisGlobalStats';
+let globalStats = getDefaultGlobalStats();
+let gameStatsCommitted = false;
+let currentHeatmapYear = new Date().getFullYear();
+let availableHeatmapYears = [];
+
 // Options actuelles
 let options = JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
 
@@ -244,6 +250,280 @@ function displayHighScores() {
 }
 
 // ===========================================
+// STATISTIQUES GLOBALES (MENU STT)
+// ===========================================
+
+function getDefaultGlobalStats() {
+  return {
+    totalGames: 0,
+    bestScore: 0,
+    totalScore: 0,
+    totalLines: 0,
+    daysPlayed: {}
+  };
+}
+
+function sanitizeDaysPlayed(daysPlayed) {
+  const clean = {};
+  if (!daysPlayed || typeof daysPlayed !== 'object') return clean;
+
+  for (const [key, value] of Object.entries(daysPlayed)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) continue;
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) continue;
+    clean[key] = Math.floor(parsed);
+  }
+
+  return clean;
+}
+
+function loadGlobalStats() {
+  const defaults = getDefaultGlobalStats();
+  const saved = localStorage.getItem(GLOBAL_STATS_STORAGE_KEY);
+
+  if (!saved) {
+    globalStats = defaults;
+    return globalStats;
+  }
+
+  try {
+    const parsed = JSON.parse(saved);
+    globalStats = {
+      totalGames: Math.max(0, Math.floor(Number(parsed.totalGames) || 0)),
+      bestScore: Math.max(0, Math.floor(Number(parsed.bestScore) || 0)),
+      totalScore: Math.max(0, Math.floor(Number(parsed.totalScore) || 0)),
+      totalLines: Math.max(0, Math.floor(Number(parsed.totalLines) || 0)),
+      daysPlayed: sanitizeDaysPlayed(parsed.daysPlayed)
+    };
+  } catch (e) {
+    globalStats = defaults;
+  }
+
+  return globalStats;
+}
+
+function saveGlobalStats() {
+  localStorage.setItem(GLOBAL_STATS_STORAGE_KEY, JSON.stringify(globalStats));
+}
+
+function getAverageScore() {
+  if (!globalStats.totalGames) return 0;
+  return Math.round(globalStats.totalScore / globalStats.totalGames);
+}
+
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateDDMM(dateKey) {
+  const [_, month, day] = dateKey.split('-');
+  return `${day}/${month}`;
+}
+
+function getGamesLabel(count) {
+  return count > 1 ? 'parties jouées' : 'partie jouée';
+}
+
+function getMondayIndex(dayIndex) {
+  return (dayIndex + 6) % 7;
+}
+
+function startOfWeekMonday(date) {
+  const start = new Date(date);
+  const mondayIndex = getMondayIndex(start.getDay());
+  start.setDate(start.getDate() - mondayIndex);
+  return start;
+}
+
+function getHeatLevel(count) {
+  if (count <= 0) return 0;
+  if (count === 1) return 1;
+  if (count <= 3) return 2;
+  if (count <= 6) return 3;
+  return 4;
+}
+
+function renderStatisticsMenu() {
+  const totalGamesEl = document.getElementById('stt-total-games');
+  const bestScoreEl = document.getElementById('stt-best-score');
+  const averageScoreEl = document.getElementById('stt-average-score');
+  const totalLinesEl = document.getElementById('stt-total-lines');
+
+  if (!totalGamesEl || !bestScoreEl || !averageScoreEl || !totalLinesEl) return;
+
+  totalGamesEl.textContent = formatNumber(globalStats.totalGames);
+  bestScoreEl.textContent = formatNumber(globalStats.bestScore);
+  averageScoreEl.textContent = formatNumber(getAverageScore());
+  totalLinesEl.textContent = formatNumber(globalStats.totalLines);
+
+  updateHeatmapYears();
+  renderHeatmapForYear(currentHeatmapYear);
+}
+
+function getAvailableYears() {
+  const years = new Set();
+  const daysData = globalStats.daysPlayed || {};
+  
+  for (const dateKey of Object.keys(daysData)) {
+    if (daysData[dateKey] > 0) {
+      const year = parseInt(dateKey.split('-')[0], 10);
+      if (!isNaN(year)) {
+        years.add(year);
+      }
+    }
+  }
+  
+  if (years.size === 0) {
+    const currentYear = new Date().getFullYear();
+    years.add(currentYear);
+  }
+  
+  return Array.from(years).sort((a, b) => b - a);
+}
+
+function updateHeatmapYears() {
+  availableHeatmapYears = getAvailableYears();
+  
+  const prevBtn = document.getElementById('stt-year-prev');
+  const nextBtn = document.getElementById('stt-year-next');
+  if (!prevBtn || !nextBtn) return;
+  
+  const minYear = Math.min(...availableHeatmapYears);
+  const maxYear = Math.max(...availableHeatmapYears);
+  
+  prevBtn.disabled = currentHeatmapYear <= minYear;
+  nextBtn.disabled = currentHeatmapYear >= maxYear;
+}
+
+function renderHeatmapForYear(year) {
+  const heatmapGrid = document.getElementById('stt-heatmap-grid');
+  const monthsContainer = document.getElementById('stt-heatmap-months');
+  const yearDisplay = document.getElementById('stt-year-display');
+  const heatmapTitle = document.getElementById('stt-heatmap-title');
+  const tooltip = document.getElementById('stt-heatmap-tooltip');
+  
+  if (!heatmapGrid || !monthsContainer || !yearDisplay || !tooltip) return;
+  
+  currentHeatmapYear = year;
+  yearDisplay.textContent = String(year);
+  
+  // Calculer le nombre de parties pour cette année
+  const yearDaysData = globalStats.daysPlayed || {};
+  let yearGames = 0;
+  for (const [dateKey, count] of Object.entries(yearDaysData)) {
+    if (dateKey.startsWith(String(year))) {
+      yearGames += count;
+    }
+  }
+  
+  if (heatmapTitle) {
+    const gamesLabel = yearGames > 1 ? 'parties' : 'partie';
+    heatmapTitle.textContent = `${yearGames} ${gamesLabel} en ${year}`;
+  }
+  
+  const CELL_SIZE = 10;
+  const CELL_GAP = 3;
+  
+  const startDate = new Date(year, 0, 1);
+  startDate.setHours(0, 0, 0, 0);
+  
+  const endDate = new Date(year, 11, 31);
+  endDate.setHours(0, 0, 0, 0);
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const actualEndDate = endDate < today ? endDate : today;
+  
+  const gridStart = startOfWeekMonday(startDate);
+  const gridEnd = startOfWeekMonday(actualEndDate);
+  gridEnd.setDate(gridEnd.getDate() + 6);
+  
+  const totalDays = Math.round((gridEnd - gridStart) / 86400000) + 1;
+  const weeksCount = Math.ceil(totalDays / 7);
+  
+  heatmapGrid.innerHTML = '';
+  monthsContainer.innerHTML = '';
+  heatmapGrid.style.setProperty('--stt-weeks', String(weeksCount));
+  
+  const daysData = globalStats.daysPlayed || {};
+  const monthNames = ['jan', 'fev', 'mar', 'avr', 'mai', 'jun', 'jul', 'aou', 'sep', 'oct', 'nov', 'dec'];
+  
+  let lastMonthLabel = '';
+  for (let week = 0; week < weeksCount; week++) {
+    const weekStart = new Date(gridStart);
+    weekStart.setDate(gridStart.getDate() + week * 7);
+    
+    if (weekStart >= startDate && weekStart <= actualEndDate) {
+      const monthLabel = monthNames[weekStart.getMonth()];
+      if (monthLabel !== lastMonthLabel && weekStart.getDate() <= 7) {
+        const label = document.createElement('span');
+        label.className = 'stt-heatmap-month';
+        label.textContent = monthLabel;
+        label.style.left = `${week * (CELL_SIZE + CELL_GAP)}px`;
+        monthsContainer.appendChild(label);
+        lastMonthLabel = monthLabel;
+      }
+    }
+  }
+  
+  for (let week = 0; week < weeksCount; week++) {
+    for (let row = 0; row < 7; row++) {
+      const cell = document.createElement('div');
+      cell.className = 'stt-heat-cell';
+      
+      const date = new Date(gridStart);
+      date.setDate(gridStart.getDate() + week * 7 + row);
+      const dateKey = getLocalDateKey(date);
+      
+      if (date < startDate || date > actualEndDate) {
+        cell.classList.add('out-range');
+        heatmapGrid.appendChild(cell);
+        continue;
+      }
+      
+      const count = daysData[dateKey] || 0;
+      cell.classList.add(`level-${getHeatLevel(count)}`);
+      
+      const message = `${formatDateDDMM(dateKey)} - ${count} ${getGamesLabel(count)}`;
+      cell.addEventListener('mouseenter', () => {
+        tooltip.textContent = message;
+      });
+      cell.addEventListener('focus', () => {
+        tooltip.textContent = message;
+      });
+      cell.addEventListener('mouseleave', () => {
+        tooltip.textContent = 'survole une case pour voir le detail';
+      });
+      
+      heatmapGrid.appendChild(cell);
+    }
+  }
+}
+
+function commitCurrentGameToGlobalStats() {
+  if (gameStatsCommitted) return;
+
+  gameStatsCommitted = true;
+  globalStats.totalGames += 1;
+  globalStats.bestScore = Math.max(globalStats.bestScore, gameStats.score);
+  globalStats.totalScore += gameStats.score;
+  globalStats.totalLines += gameStats.lines;
+
+  const todayKey = getLocalDateKey();
+  if (!globalStats.daysPlayed[todayKey]) {
+    globalStats.daysPlayed[todayKey] = 0;
+  }
+  globalStats.daysPlayed[todayKey] += 1;
+
+  saveGlobalStats();
+  renderStatisticsMenu();
+}
+
+// ===========================================
 // GESTION DES MENUS
 // ===========================================
 
@@ -257,6 +537,10 @@ function showMenu(menuName) {
   // Afficher le menu demandé
   document.getElementById(`menu-${menuName}`).classList.remove('hidden');
   currentMenu = menuName;
+
+  if (menuName === 'STT') {
+    renderStatisticsMenu();
+  }
 }
 
 function showPreviousMenu() {
@@ -881,6 +1165,7 @@ function startGame() {
   gameOver = false;
   gamePaused = false;
   gameRunning = true;
+  gameStatsCommitted = false;
   dropCounter = 0;
   lastTime = 0;
   
@@ -964,6 +1249,7 @@ function triggerGameOver() {
   }
   
   saveHighScore(gameStats.score);
+  commitCurrentGameToGlobalStats();
   playSound('gameOver');
   
   // Afficher l'overlay Game Over
@@ -1154,6 +1440,22 @@ function initEventListeners() {
 
   // Menu Statistiques
   document.getElementById('STT-done-btn').addEventListener('click', showPreviousMenu);
+  
+  document.getElementById('stt-year-prev').addEventListener('click', () => {
+    const minYear = Math.min(...availableHeatmapYears);
+    if (currentHeatmapYear > minYear) {
+      renderHeatmapForYear(currentHeatmapYear - 1);
+      updateHeatmapYears();
+    }
+  });
+  
+  document.getElementById('stt-year-next').addEventListener('click', () => {
+    const maxYear = Math.max(...availableHeatmapYears);
+    if (currentHeatmapYear < maxYear) {
+      renderHeatmapForYear(currentHeatmapYear + 1);
+      updateHeatmapYears();
+    }
+  });
 
   // Menu Options
   document.getElementById('options-done-btn').addEventListener('click', showPreviousMenu);
@@ -1199,7 +1501,7 @@ function initEventListeners() {
     }
     const icon = document.getElementById('sound-icon');
     icon.src = audioMuted ? 'img/mute.png' : 'img/volume.png';
-    btn.classList.toggle('muted', audioMuted);
+    document.getElementById('sound-toggle').classList.toggle('muted', audioMuted);
   });
   
   // Clavier
@@ -1226,6 +1528,7 @@ function init() {
   nextCtx = nextCanvas.getContext('2d');
   
   loadOptions();
+  loadGlobalStats();
   syncAudioSettings();
   if (typeof audioManager !== 'undefined') {
     audioManager.loadSounds().catch(() => {
@@ -1234,6 +1537,7 @@ function init() {
   }
   createArena();
   displayHighScores();
+  renderStatisticsMenu();
   updateDisplay();
   updateLevelDisplay();
   initEventListeners();
