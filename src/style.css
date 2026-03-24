@@ -94,13 +94,12 @@ pointer-events: none;
       #b7c5e0 2px,
       #b7c5e0 4px
     );
-}
 
-/* SI JE VEUX MAIA EN FOND:
-  background-image: url('img/maia.png');
+    /* SI JE VEUX MAIA EN FOND: 
+  background-image: url('img/theme/manga/ddd.jpeg');
   background-size: cover; 
-  background-position: center;
-*/
+  background-position: center;*/
+}
 
 .menus-overlay {
   position: absolute;
@@ -146,7 +145,7 @@ pointer-events: none;
 
 /* Bloc commun pour tous les éléments de la colonne droite */
 .info-block {
-  background: #dfedfd;
+  background: #dfedfdcc;
   border: 5px solid #6b78a3;
   padding: 12px;
 }
@@ -196,16 +195,16 @@ pointer-events: none;
 /* === CONTRÔLES (PAUSE + SON) === */
 .controls-block {
   display: flex;
-  background: transparent;
-  border: none;
+  background: #dfedfdcc;
+  border: 5px solid #6b78a3;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 
 .pause-btn {
-  background: transparent;
   border: none;
+  background: transparent;
   color: #5e6b98;
   font-size: 18px;
   font-weight: bold;
@@ -312,20 +311,35 @@ pointer-events: none;
   color: #2a3a4a;
 }
 
-/* === HIGH SCORES === */
-.high-scores-box {
+/* === THEME === */
+.theme-selector {
   background: #dfedfd;
   border: 3px solid #6b78a3;
   padding: 12px 15px;
   flex-grow: 1;
 }
 
-.high-scores-title {
+.theme-title {
   color: #5e6b98;
-  font-size: 14px;
+  font-size: 18px;
   font-weight: bold;
   margin-bottom: 10px;
   text-align: center;
+}
+
+#theme-list {
+  display: block;
+}
+
+.theme-level-selector {
+  margin-top: 2px;
+}
+
+#theme-display {
+  color: #5e6b98;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
 #high-scores-list {

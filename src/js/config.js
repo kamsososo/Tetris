@@ -116,6 +116,31 @@ const KEY_NAMES = {
   'Alt': 'ALT'
 };
 
+// === THEMES ===
+// Source de vérité explicite des dossiers de thèmes et des assets connus.
+// En navigateur, on ne peut pas lister les fichiers d'un dossier sans backend.
+const THEME_ASSETS = {
+  cat: [
+    '_ (1).jpeg',
+    '_ (2).jpeg',
+    '_.jpeg',
+    'background.png',
+    'cold snap ;.jpeg',
+    'oardefault-4223276156.jpg',
+    'theme_LOGO.jpeg'
+  ],
+  manga: [
+    'background.jpeg',
+    'ddd.jpeg',
+    'dw.jpeg',
+    'dwwww.jpeg',
+    'ffff.jpeg',
+    'llll.jpeg',
+    'lsls.jpeg',
+    'theme_LOGO.jpeg'
+  ]
+};
+
 /**
  * Obtient le nom lisible d'une touche
  */

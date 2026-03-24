@@ -68,6 +68,18 @@ let linesClearingAnimation = false; // true = animation en cours
 // Audio
 let audioMuted = false;
 
+// Themes
+const THEME_STORAGE_KEY = 'tetrisTheme';
+const THEME_NONE_VALUE = '__none__';
+const THEME_NONE_LABEL = 'AUCUN';
+const THEME_BACKGROUND_CANDIDATES = ['background.png', 'background.jpeg'];
+const THEME_LOGO_CANDIDATES = ['theme_LOGO.png', 'theme_LOGO.jpeg'];
+let selectedThemeName = null;
+let defaultLogoSrc = 'img/LOGO.png';
+let lastTetrisBackgroundPath = null;
+const themeImageCheckCache = new Map();
+const themeCanvasAssetsCache = new Map();
+
 function setStatsValuesVisible(visible) {
   document.querySelectorAll('.stat-value').forEach(el => {
     el.classList.toggle('hidden', !visible);
@@ -93,6 +105,292 @@ function startMusic() {
     return;
   }
   audioManager.playMusic(options.musicType);
+}
+
+// ===========================================
+// THEMES
+// ===========================================
+
+function getThemeNames() {
+  if (!THEME_ASSETS || typeof THEME_ASSETS !== 'object') return [];
+  return Object.keys(THEME_ASSETS);
+}
+
+function getThemeChoices() {
+  return [THEME_NONE_VALUE, ...getThemeNames()];
+}
+
+function getThemeDisplayLabel(themeName) {
+  return themeName ? themeName : THEME_NONE_LABEL;
+}
+
+function getThemeFiles(themeName) {
+  const files = THEME_ASSETS?.[themeName];
+  return Array.isArray(files) ? files : [];
+}
+
+function normalizeThemeAssetName(fileName) {
+  return String(fileName || '').trim().toLowerCase();
+}
+
+function isExcludedCanvasThemeAsset(fileName) {
+  const normalized = normalizeThemeAssetName(fileName);
+  return (
+    normalized === 'background.png' ||
+    normalized === 'background.jpeg' ||
+    normalized === 'background.jpg' ||
+    normalized === 'theme_logo.png' ||
+    normalized === 'theme_logo.jpeg' ||
+    normalized === 'theme_logo.jpg'
+  );
+}
+
+function getThemeAssetPath(themeName, fileName) {
+  return `img/theme/${themeName}/${fileName}`;
+}
+
+function getThemeAssetUrl(path) {
+  return encodeURI(path);
+}
+
+function checkThemeImageExists(path) {
+  if (themeImageCheckCache.has(path)) {
+    return themeImageCheckCache.get(path);
+  }
+
+  const checkPromise = new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = getThemeAssetUrl(path);
+  });
+
+  themeImageCheckCache.set(path, checkPromise);
+  return checkPromise;
+}
+
+async function resolveFirstAvailableThemeAsset(themeName, candidateFiles) {
+  for (const candidate of candidateFiles) {
+    const path = getThemeAssetPath(themeName, candidate);
+    if (await checkThemeImageExists(path)) {
+      return path;
+    }
+  }
+  return null;
+}
+
+async function resolveThemeCanvasAssets(themeName) {
+  if (themeCanvasAssetsCache.has(themeName)) {
+    return themeCanvasAssetsCache.get(themeName);
+  }
+
+  const allFiles = getThemeFiles(themeName);
+  const eligibleFiles = allFiles.filter(fileName => !isExcludedCanvasThemeAsset(fileName));
+  const resolvedAssets = [];
+
+  for (const fileName of eligibleFiles) {
+    const path = getThemeAssetPath(themeName, fileName);
+    if (await checkThemeImageExists(path)) {
+      resolvedAssets.push(path);
+    }
+  }
+
+  themeCanvasAssetsCache.set(themeName, resolvedAssets);
+  return resolvedAssets;
+}
+
+function resetBodyThemeBackground() {
+  document.body.style.backgroundImage = '';
+  document.body.style.backgroundSize = '';
+  document.body.style.backgroundPosition = '';
+  document.body.style.backgroundRepeat = '';
+}
+
+function resetTetrisBackground() {
+  if (!canvas) return;
+  canvas.style.backgroundImage = '';
+  canvas.style.backgroundSize = '';
+  canvas.style.backgroundPosition = '';
+  canvas.style.backgroundRepeat = '';
+  lastTetrisBackgroundPath = null;
+}
+
+function resetThemeVisualsToDefault() {
+  resetBodyThemeBackground();
+  resetTetrisBackground();
+  const logoElement = document.querySelector('.logo-img');
+  if (logoElement) {
+    logoElement.src = defaultLogoSrc;
+  }
+}
+
+async function applyBodyThemeBackground(themeName) {
+  const backgroundPath = await resolveFirstAvailableThemeAsset(themeName, THEME_BACKGROUND_CANDIDATES);
+  if (!backgroundPath) {
+    resetBodyThemeBackground();
+    return;
+  }
+
+  document.body.style.backgroundImage = `url("${getThemeAssetUrl(backgroundPath)}")`;
+  document.body.style.backgroundSize = 'cover';
+  document.body.style.backgroundPosition = 'center';
+  document.body.style.backgroundRepeat = 'no-repeat';
+}
+
+async function applyThemeLogo(themeName) {
+  const logoElement = document.querySelector('.logo-img');
+  if (!logoElement) return;
+
+  const logoPath = await resolveFirstAvailableThemeAsset(themeName, THEME_LOGO_CANDIDATES);
+  logoElement.src = logoPath ? getThemeAssetUrl(logoPath) : defaultLogoSrc;
+}
+
+async function applyRandomTetrisThemeBackground(themeName) {
+  if (!canvas || !themeName) return;
+
+  const eligibleAssets = await resolveThemeCanvasAssets(themeName);
+  if (!eligibleAssets.length) {
+    return;
+  }
+
+  let pool = eligibleAssets;
+  if (eligibleAssets.length > 1 && lastTetrisBackgroundPath) {
+    const nonRepeatedAssets = eligibleAssets.filter(path => path !== lastTetrisBackgroundPath);
+    if (nonRepeatedAssets.length > 0) {
+      pool = nonRepeatedAssets;
+    }
+  }
+
+  const randomIndex = getRandomInt(0, pool.length - 1);
+  const randomPath = pool[randomIndex];
+
+  canvas.style.backgroundImage = `url("${getThemeAssetUrl(randomPath)}")`;
+  canvas.style.backgroundSize = 'cover';
+  canvas.style.backgroundPosition = 'center';
+  canvas.style.backgroundRepeat = 'no-repeat';
+  lastTetrisBackgroundPath = randomPath;
+}
+
+async function applyThemeVisuals(themeName, refreshCanvasBackground) {
+  if (!themeName) {
+    resetThemeVisualsToDefault();
+    return;
+  }
+
+  await applyBodyThemeBackground(themeName);
+  await applyThemeLogo(themeName);
+
+  if (refreshCanvasBackground) {
+    await applyRandomTetrisThemeBackground(themeName);
+  }
+}
+
+function updateThemeDisplay() {
+  const themeDisplay = document.getElementById('theme-display');
+  if (!themeDisplay) return;
+  themeDisplay.textContent = getThemeDisplayLabel(selectedThemeName);
+}
+
+function saveSelectedTheme(themeName) {
+  localStorage.setItem(THEME_STORAGE_KEY, themeName || THEME_NONE_VALUE);
+}
+
+function getSavedTheme() {
+  const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+  if (savedTheme === null) return undefined;
+  if (savedTheme === THEME_NONE_VALUE) return null;
+  return savedTheme;
+}
+
+function selectTheme(themeName, options = {}) {
+  const { persist = true, applyDuringGame = false } = options;
+  const normalizedValue = themeName || THEME_NONE_VALUE;
+  const availableThemes = getThemeChoices();
+  if (!availableThemes.includes(normalizedValue)) return;
+
+  selectedThemeName = normalizedValue === THEME_NONE_VALUE ? null : normalizedValue;
+  updateThemeDisplay();
+
+  if (persist) {
+    saveSelectedTheme(selectedThemeName);
+  }
+
+  if (applyDuringGame && gameRunning) {
+    applyThemeVisuals(selectedThemeName, true);
+  }
+}
+
+function cycleTheme(direction) {
+  const choices = getThemeChoices();
+  if (!choices.length) return;
+
+  const currentValue = selectedThemeName || THEME_NONE_VALUE;
+  const currentIndex = choices.indexOf(currentValue);
+  if (currentIndex < 0) return;
+
+  const nextIndex = (currentIndex + direction + choices.length) % choices.length;
+  const nextValue = choices[nextIndex];
+  selectTheme(nextValue === THEME_NONE_VALUE ? null : nextValue, {
+    persist: true,
+    applyDuringGame: true
+  });
+}
+
+function renderThemeSelector() {
+  const themeList = document.getElementById('theme-list');
+  if (!themeList) return;
+
+  themeList.innerHTML = '';
+
+  const selector = document.createElement('div');
+  selector.className = 'theme-level-selector level-selector';
+
+  const downButton = document.createElement('button');
+  downButton.type = 'button';
+  downButton.id = 'theme-down';
+  downButton.className = 'arrow-btn';
+  downButton.textContent = '<';
+  downButton.addEventListener('click', () => cycleTheme(-1));
+
+  const display = document.createElement('span');
+  display.id = 'theme-display';
+  display.textContent = THEME_NONE_LABEL;
+
+  const upButton = document.createElement('button');
+  upButton.type = 'button';
+  upButton.id = 'theme-up';
+  upButton.className = 'arrow-btn';
+  upButton.textContent = '>';
+  upButton.addEventListener('click', () => cycleTheme(1));
+
+  selector.appendChild(downButton);
+  selector.appendChild(display);
+  selector.appendChild(upButton);
+  themeList.appendChild(selector);
+}
+
+function initThemeSystem() {
+  const logoElement = document.querySelector('.logo-img');
+  if (logoElement && logoElement.getAttribute('src')) {
+    defaultLogoSrc = logoElement.getAttribute('src');
+  }
+
+  renderThemeSelector();
+
+  const themes = getThemeNames();
+  if (!themes.length) {
+    selectTheme(null, { persist: true, applyDuringGame: false });
+    return;
+  }
+
+  const savedTheme = getSavedTheme();
+  let initialTheme = themes[0];
+
+  if (savedTheme === null || themes.includes(savedTheme)) {
+    initialTheme = savedTheme;
+  }
+
+  selectTheme(initialTheme, { persist: savedTheme === undefined, applyDuringGame: false });
 }
 
 // ===========================================
@@ -201,7 +499,7 @@ function adjustOption(target, direction) {
       }
       break;
     case 'musicType':
-      options.musicType = Math.max(1, Math.min(3, options.musicType + dir));
+      options.musicType = Math.max(1, Math.min(2, options.musicType + dir));
       if (gameRunning && !gamePaused && !gameOver) {
         startMusic();
       }
@@ -210,43 +508,6 @@ function adjustOption(target, direction) {
   
   saveOptions();
   updateOptionsDisplay();
-}
-
-// ===========================================
-// GESTION DES HIGH SCORES
-// ===========================================
-
-function loadHighScores() {
-  const saved = localStorage.getItem('tetrisHighScores');
-  return saved ? JSON.parse(saved) : [];
-}
-
-function saveHighScore(score) {
-  const scores = loadHighScores();
-  scores.push(score);
-  scores.sort((a, b) => b - a);
-  const topScores = scores.slice(0, CONFIG.MAX_HIGH_SCORES);
-  localStorage.setItem('tetrisHighScores', JSON.stringify(topScores));
-  return topScores;
-}
-
-function resetHighScores() {
-  localStorage.removeItem('tetrisHighScores');
-  displayHighScores();
-}
-
-function displayHighScores() {
-  const scores = loadHighScores();
-  const container = document.getElementById('high-scores-list');
-  if (!container) return;
-  
-  container.innerHTML = '';
-  for (let i = 0; i < CONFIG.MAX_HIGH_SCORES; i++) {
-    const entry = document.createElement('div');
-    entry.className = 'score-entry';
-    entry.textContent = scores[i] ? formatNumber(scores[i]) : '---';
-    container.appendChild(entry);
-  }
 }
 
 // ===========================================
@@ -738,6 +999,7 @@ async function placePiece() {
   const linesCleared = await clearLines();
   if (linesCleared > 0) {
     updateScore(linesCleared);
+    applyRandomTetrisThemeBackground(selectedThemeName);
   }
   
   // Prochaine pièce
@@ -1178,6 +1440,8 @@ function startGame() {
   
   // Afficher le jeu
   document.querySelector('.game-container').classList.add('playing');
+
+  applyThemeVisuals(selectedThemeName, true);
   
   updateDisplay();
   drawNextPiece();
@@ -1232,7 +1496,7 @@ function quitGame() {
   createArena();
   draw();
   showMenu('accueil');
-  displayHighScores();
+  resetThemeVisualsToDefault();
 }
 
 function restartGame() {
@@ -1248,7 +1512,7 @@ function triggerGameOver() {
     cancelAnimationFrame(animationId);
   }
   
-  saveHighScore(gameStats.score);
+  //saveHighScore(gameStats.score);
   commitCurrentGameToGlobalStats();
   playSound('gameOver');
   
@@ -1459,7 +1723,6 @@ function initEventListeners() {
 
   // Menu Options
   document.getElementById('options-done-btn').addEventListener('click', showPreviousMenu);
-  document.getElementById('reset-scores-btn').addEventListener('click', resetHighScores);
   document.getElementById('reset-options-btn').addEventListener('click', resetOptions);
   
   // Boutons de configuration des touches
@@ -1500,7 +1763,7 @@ function initEventListeners() {
       audioMuted = !audioMuted;
     }
     const icon = document.getElementById('sound-icon');
-    icon.src = audioMuted ? 'img/mute.png' : 'img/volume.png';
+    icon.src = audioMuted ? 'img/icons/mute.png' : 'img/icons/volume.png';
     document.getElementById('sound-toggle').classList.toggle('muted', audioMuted);
   });
   
@@ -1536,11 +1799,13 @@ function init() {
     });
   }
   createArena();
-  displayHighScores();
   renderStatisticsMenu();
   updateDisplay();
   updateLevelDisplay();
+  initThemeSystem();
   initEventListeners();
+
+  resetThemeVisualsToDefault();
   
   draw();
   
