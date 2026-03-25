@@ -29,10 +29,12 @@ Tetris/
     │   ├── config.js      # Constantes, couleurs, formes, utilitaires
     │   ├── tetris.js      # Logique du jeu (moteur principal)
     │   └── audio.js       # Gestionnaire audio
-    ├── assets/
-    │   ├── font/          # Police custom (FFF Forward)
-    │   ├── img/           # Images, logo, icônes, thèmes
-    │   └── audio/         # Musiques et effets sonores
+    └── assets/
+        ├── font/          # Police custom (FFF Forward)
+        ├── img/           
+        │   ├── icons/     # Icônes
+        │   └── theme/     # Thèmes du jeu
+        └── audio/         # Musiques et effets sonores
 ```
 
 > **Remarque :** Tous les assets sont dans `src/assets/` pour une meilleure organisation.
