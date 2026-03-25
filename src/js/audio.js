@@ -1,7 +1,7 @@
 /* ========================================
-   TETRIS - Gestionnaire Audio
-   Gère les effets sonores et la musique
-   ======================================== */
+  TETRIS - Gestionnaire Audio
+  Gère les effets sonores et la musique
+  ======================================== */
 
 class AudioManager {
   constructor() {
@@ -14,17 +14,17 @@ class AudioManager {
     
     // Chemins des fichiers audio (à fournir)
     this.soundPaths = {
-      rotate: 'audio/rotate.mp3',
-      drop: 'audio/drop.mp3',
-      clear: 'audio/clear.mp3',
-      tetris: 'audio/tetris.mp3',
-      levelUp: 'audio/levelup.mp3',
-      gameOver: 'audio/game over.mp3'
+      rotate: 'assets/audio/rotate.mp3',
+      drop: 'assets/audio/drop.mp3',
+      clear: 'assets/audio/clear.mp3',
+      tetris: 'assets/audio/tetris.mp3',
+      levelUp: 'assets/audio/levelup.mp3',
+      gameOver: 'assets/audio/game over.mp3'
     };
     
     this.musicPaths = {
-      1: 'audio/music1.mp3',
-      2: 'audio/music2.mp3',
+      1: 'assets/audio/music1.mp3',
+      2: 'assets/audio/music2.mp3',
     };
   }
 

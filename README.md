@@ -24,15 +24,33 @@ Tetris/
 ├── README.md
 └── src/
     ├── index.html         # Page principale
-    ├── style.css          # Styles complets
-    ├── tetris.js          # Logique du jeu
-    ├── font/              # Police custom (FFF Forward)
-    ├── img/               # Images, logo et icones
-    ├── audio/             # Musiques et effets sonores
-    └── js/
-        ├── config.js      # Constantes, couleurs, formes des tétrominos
-        └── audio.js       # Gestionnaire audio
+    ├── style.css          # Styles (variables CSS, responsive)
+    ├── js/
+    │   ├── config.js      # Constantes, couleurs, formes, utilitaires
+    │   ├── tetris.js      # Logique du jeu (moteur principal)
+    │   └── audio.js       # Gestionnaire audio
+    ├── assets/
+    │   ├── font/          # Police custom (FFF Forward)
+    │   ├── img/           # Images, logo, icônes, thèmes
+    │   └── audio/         # Musiques et effets sonores
 ```
+
+> **Remarque :** Tous les assets sont dans `src/assets/` pour une meilleure organisation.
+
+
+## Installation et lancement
+
+Ouvrir le fichier HTML dans un navigateur moderne :
+
+```bash
+open src/index.html        # macOS
+# ou
+xdg-open src/index.html   # Linux
+# ou
+start src/index.html      # Windows
+```
+
+> Aucun serveur ou dépendance externe n'est requis.
 
 ## Thèmes
 
@@ -45,26 +63,28 @@ Exclusions strictes pour le fond aléatoire du plateau :
 - background.png, background.jpeg, background.jpg
 - theme_LOGO.png, theme_LOGO.jpeg, theme_LOGO.jpg
 
-Comment ajouter un theme :
-- Créer un dossier dans src/img/theme/ avec le nom du thème (ce nom sera affiché tel quel dans la liste).
+
+### Ajouter un thème personnalisé
+- Créer un dossier dans `src/assets/img/theme/` avec le nom du thème (ce nom sera affiché dans la liste).
 - Ajouter les images du thème dans ce dossier selon la convention ci-dessus.
-- Déclarer le thème et ses noms de fichiers dans THEME_ASSETS dans src/js/config.js.
+- Déclarer le thème et ses fichiers dans `THEME_ASSETS` dans `src/js/config.js`.
 
 Fallbacks appliqués :
 - Si le fond global du thème est absent, le style de fond CSS existant est conservé.
-- Si le logo du thème est absent, le logo par defaut img/LOGO.png est utilisé.
+- Si le logo du thème est absent, le logo par défaut assets/img/LOGO.png est utilisé.
 - Si aucune image éligible n'existe pour le plateau, le fond actuel du canvas est conservé.
 
-## Lancement
+## Personnalisation des contrôles
 
-Ouvrir le fichier HTML dans un navigateur :
+Dans le menu **Options**, vous pouvez :
+- Reconfigurer chaque touche (gauche, droite, rotation, descente douce, descente rapide)
+- Régler le délai et la vitesse d’auto-répétition (DAS/ARR)
+- Régler le volume des effets et de la musique
 
-```bash
-open src/index.html        # macOS
-# ou
-xdg-open src/index.html   # Linux
-```
+## Contribution
+
+Les contributions sont bienvenues ! Merci de respecter la structure du projet et les conventions de nommage. Pour toute suggestion ou bug, ouvrez une issue ou une pull request.
 
 ## Licence
 
-Projet personnel — usage éducatif.
+Projet personnel — usage éducatif uniquement.

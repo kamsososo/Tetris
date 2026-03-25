@@ -1,12 +1,60 @@
 /* ========================================
-   TETRIS - Feuille de styles complète
-   Clone fidèle de Tetris N-Blox
-   ======================================== */
+  TETRIS - Feuille de styles principale
+  ======================================== */
 
-/* === POLICE CUSTOM === */
+
+/* === VARIABLES CSS === */
+:root {
+  /* Couleurs des pièces Tetris (synchronisées avec JS) */
+  --color-tetromino-I: #ff6600;
+  --color-tetromino-O: #ff0000;
+  --color-tetromino-T: #ffff00;
+  --color-tetromino-S: #00aaff;
+  --color-tetromino-Z: #00ff00;
+  --color-tetromino-J: #cf0fff;
+  --color-tetromino-L: #0000ff;
+
+  /* Palette générale */
+  --color-bg-main: #dfedfd;
+  --color-bg-panel: #dfedfdcc;
+  --color-bg-accent: #c7d5e9;
+  --color-bg-accent2: #c6d5e6;
+  --color-border: #6b78a3;
+  --color-text-main: #5e6b98;
+  --color-text-accent: #2a3a4a;
+  --color-heatmap-0: #edf3fb;
+  --color-heatmap-1: #cae2fa;
+  --color-heatmap-2: #96c4ec;
+  --color-heatmap-3: #5f9bd3;
+  --color-heatmap-4: #2f6ea7;
+
+  /* Polices */
+  --font-main: 'FFF Forward';
+
+  /* Tailles et espacements */
+  --main-width: 650px;
+  --main-padding: 15px;
+  --main-gap: 12px;
+  --panel-width: 240px;
+  --panel-padding: 15px;
+  --panel-gap: 12px;
+  --border-thick: 5px;
+  --border-medium: 3px;
+  --border-radius: 8px;
+  --font-size-base: 14px;
+  --font-size-large: 18px;
+  --font-size-xlarge: 20px;
+  --font-size-small: 12px;
+  --font-size-xs: 10px;
+  --cell-size: 10px;
+  --cell-gap: 3px;
+  --logo-width: 100%;
+  --next-piece-height: 144px;
+}
+
 @font-face {
   font-family: 'FFF Forward';
-  src: url('font/FFFFORWA.TTF') format('truetype');
+  src: url('assets/font/FFFFORWA.TTF') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
@@ -20,7 +68,7 @@
 
 html, body {
   height: 100%;
-  font-family: 'FFF Forward';
+  font-family: var(--font-main);
 }
 
 body {
@@ -30,8 +78,8 @@ body {
       120deg,
       #deecfc ,
       #deecfc 2px,
-      #c7d5e9 2px,
-      #c7d5e9 4px
+      var(--color-bg-accent) 2px,
+      var(--color-bg-accent) 4px
     );
   display: flex;
   align-items: center;
@@ -39,17 +87,12 @@ body {
   overflow-x: auto;
 }
 
-/* === ÉLÉMENTS CACHÉS === */
+/* === ÉLÉMENTS CACHÉS ET ACCESSIBILITÉ === */
 .hidden {
   display: none !important;
 }
 
-#pause-btn.hidden {
-display: block !important;
-visibility: hidden;
-pointer-events: none;
-}
-
+#pause-btn.hidden,
 #stat-value.hidden {
 display: block !important;
 visibility: hidden;
@@ -59,10 +102,10 @@ pointer-events: none;
 /* === CONTENEUR PRINCIPAL === */
 .game-container {
   display: flex;
-  gap: 12px;
-  padding: 15px;
-  width: 650px;
-  min-width: 650px;
+  gap: var(--main-gap);
+  padding: var(--main-padding);
+  width: var(--main-width);
+  min-width: var(--main-width);
   flex-shrink: 0;
 }
 
@@ -77,8 +120,8 @@ pointer-events: none;
 }
 
 .game-area {
-  background: #dfedfd;
-  border: 5px solid #6b78a3;
+  background: var(--color-bg-main);
+  border: 5px solid var(--color-border);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -94,11 +137,7 @@ pointer-events: none;
       #b7c5e0 2px,
       #b7c5e0 4px
     );
-
-    /* SI JE VEUX MAIA EN FOND: 
-  background-image: url('img/theme/manga/ddd.jpeg');
-  background-size: cover; 
-  background-position: center;*/
+  /* Pour fond image thème : voir JS */
 }
 
 .menus-overlay {
@@ -128,9 +167,9 @@ pointer-events: none;
 .panel-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  width: 240px;
-  padding: 15px;
+  gap: var(--panel-gap);
+  width: var(--panel-width);
+  padding: var(--panel-padding);
 }
 
 /* ===========================================
@@ -145,8 +184,8 @@ pointer-events: none;
 
 /* Bloc commun pour tous les éléments de la colonne droite */
 .info-block {
-  background: #dfedfdcc;
-  border: 5px solid #6b78a3;
+  background: var(--color-bg-panel);
+  border: var(--border-thick) solid var(--color-border);
   padding: 12px;
 }
 
@@ -155,7 +194,7 @@ pointer-events: none;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 144px;
+  height: var(--next-piece-height);
 }
 
 #next-piece {
@@ -175,28 +214,28 @@ pointer-events: none;
   justify-content: space-between;
   align-items: center;
   padding: 6px 8px;
-  background: #c7d5e9;
+  background: var(--color-bg-accent);
 }
 
 .stat-label {
-  color: #5e6b98;
-  font-size: 14px;
+  color: var(--color-text-main);
+  font-size: var(--font-size-base);
   font-weight: bold;
 }
 
 .stat-value {
-  color: #5e6b98;
-  font-size: 14px;
+  color: var(--color-text-main);
+  font-size: var(--font-size-base);
   font-weight: bold;
-  font-family: 'fff forward', sans-serif;
+  font-family: var(--font-main);
   letter-spacing: -1px;
 }
 
 /* === CONTRÔLES (PAUSE + SON) === */
 .controls-block {
   display: flex;
-  background: #dfedfdcc;
-  border: 5px solid #6b78a3;
+  background: var(--color-bg-panel);
+  border: 5px solid var(--color-border);
   align-items: center;
   justify-content: space-between;
   gap: 10px;
@@ -205,18 +244,18 @@ pointer-events: none;
 .pause-btn {
   border: none;
   background: transparent;
-  color: #5e6b98;
-  font-size: 18px;
+  color: var(--color-text-main);
+  font-size: var(--font-size-large);
   font-weight: bold;
   cursor: pointer;
   padding: 8px 15px;
   transition: all 0.12s ease;
-  font-family: fff forward, sans-serif;
+  font-family: var(--font-main);
 }
 
 .pause-btn:hover {
-  background: #c6d5e6;
-  color: #2a3a4a;
+  background: var(--color-bg-accent2);
+  color: var(--color-text-accent);
 }
 
 .sound-btn {
@@ -259,23 +298,23 @@ pointer-events: none;
 
 /* === BOUTONS DE MENU === */
 .menu-btn {
-  background: #dfedfd;
-  border: 3px solid #6b78a3;
-  color: #5e6b98;
-  font-family: 'FFF Forward', sans-serif;
-  font-size: 18px;
+  background: var(--color-bg-main);
+  border: var(--border-medium) solid var(--color-border);
+  color: var(--color-text-main);
+  font-family: var(--font-main);
+  font-size: var(--font-size-large);
   padding: 14px 20px;
   cursor: pointer;
   transition: all 0.12s ease;
 }
 
 .menu-btn:hover {
-  background: #c6d5e6;
-  color: #2a3a4a;
+  background: var(--color-bg-accent2);
+  color: var(--color-text-accent);
 }
 
 .menu-btn.large {
-  font-size: 20px;
+  font-size: var(--font-size-xlarge);
   padding: 20px;
 }
 
@@ -284,13 +323,13 @@ pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #dfedfd;
-  border: 3px solid #6b78a3;
+  background: var(--color-bg-main);
+  border: var(--border-medium) solid var(--color-border);
   padding: 12px 15px;
 }
 
 #level-display {
-  color: #5e6b98;
+  color: var(--color-text-main);
   font-size: 16px;
   font-weight: bold;
 }
@@ -298,7 +337,7 @@ pointer-events: none;
 .arrow-btn {
   background: transparent;
   border: none;
-  color: #5e6b98;
+  color: var(--color-text-main);
   font-size: 22px;
   font-weight: bold;
   cursor: pointer;
@@ -307,21 +346,21 @@ pointer-events: none;
 }
 
 .arrow-btn:hover {
-  background: #c6d5e6;
-  color: #2a3a4a;
+  background: var(--color-bg-accent2);
+  color: var(--color-text-accent);
 }
 
 /* === THEME === */
 .theme-selector {
-  background: #dfedfd;
-  border: 3px solid #6b78a3;
+  background: var(--color-bg-main);
+  border: 3px solid var(--color-border);
   padding: 12px 15px;
   flex-grow: 1;
 }
 
 .theme-title {
-  color: #5e6b98;
-  font-size: 18px;
+  color: var(--color-text-main);
+  font-size: var(--font-size-large);
   font-weight: bold;
   margin-bottom: 10px;
   text-align: center;
@@ -336,7 +375,7 @@ pointer-events: none;
 }
 
 #theme-display {
-  color: #5e6b98;
+  color: var(--color-text-main);
   font-size: 14px;
   font-weight: bold;
   text-transform: uppercase;
@@ -352,11 +391,11 @@ pointer-events: none;
   display: flex;
   justify-content: flex-end;
   padding: 6px 10px;
-  background: #c7d5e9;
-  color: #5e6b98;
+  background: var(--color-bg-accent);
+  color: var(--color-text-main);
   font-size: 12px;
   font-weight: 100;
-  font-family: FFF Forward, sans-serif;
+  font-family: var(--font-main);
 }
 
 /* === BOUTONS EN BAS === */
@@ -366,19 +405,19 @@ pointer-events: none;
 }
 
 .icon-btn {
-  color: #5e6b98;
+  color: var(--color-text-main);
   font-size: 15px;
   cursor: pointer;
   transition: all 0.12s ease;
   flex: 1;
   display: flex;
   justify-content: center;
-  font-family: FFF Forward;
+  font-family: var(--font-main);
 }
 
 .icon-btn:hover {
-  background: #c6d5e6;
-  color: #2a3a4a;
+  background: var(--color-bg-accent2);
+  color: var(--color-text-accent);
 }
 
 #settings-btn {
@@ -444,11 +483,11 @@ pointer-events: none;
    =========================================== */
 
 .STT-title {
-  color: #5e6b98;
+  color: var(--color-text-main);
   font-size: 20px;
   text-align: center;
   margin-bottom: 10px;
-  font-family: FFF Forward, sans-serif;
+  font-family: var(--font-main);
 }
 
 .STT-content {
@@ -471,13 +510,13 @@ pointer-events: none;
 }
 
 .stt-kpi-card {
-  background: #dfedfd;
-  border: 2px solid #6b78a3;
+  background: var(--color-bg-main);
+  border: 2px solid var(--color-border);
   padding: 8px;
 }
 
 .stt-kpi-label {
-  color: #5e6b98;
+  color: var(--color-text-main);
   font-size: 11px;
   margin-bottom: 4px;
 }
@@ -490,13 +529,13 @@ pointer-events: none;
 }
 
 .stt-heatmap-box {
-  background: #dfedfd;
-  border: 2px solid #6b78a3;
+  background: var(--color-bg-main);
+  border: 2px solid var(--color-border);
   padding: 8px;
 }
 
 .stt-heatmap-header {
-  color: #5e6b98;
+  color: var(--color-text-main);
   font-size: 10px;
   margin-bottom: 4px;
 }
@@ -515,9 +554,9 @@ pointer-events: none;
 }
 
 .stt-year-btn {
-  background: #dfedfd;
-  border: 2px solid #6b78a3;
-  color: #5e6b98;
+  background: var(--color-bg-main);
+  border: 2px solid var(--color-border);
+  color: var(--color-text-main);
   font-size: 12px;
   font-weight: bold;
   width: 24px;
@@ -530,7 +569,7 @@ pointer-events: none;
 }
 
 .stt-year-btn:hover {
-  background: #c6d5e6;
+  background: var(--color-bg-accent2);
 }
 
 .stt-year-btn:disabled {
@@ -557,7 +596,7 @@ pointer-events: none;
 .stt-heatmap-month {
   position: absolute;
   top: 0;
-  color: #5e6b98;
+  color: var(--color-text-main);
   font-size: 9px;
   white-space: nowrap;
 }
@@ -595,14 +634,14 @@ pointer-events: none;
   width: 10px;
   height: 10px;
   border: 1px solid rgba(93, 107, 152, 0.25);
-  background: #edf3fb;
+  background: var(--color-heatmap-0);
 }
 
-.stt-heat-cell.level-0 { background: #edf3fb; }
-.stt-heat-cell.level-1 { background: #cae2fa; }
-.stt-heat-cell.level-2 { background: #96c4ec; }
-.stt-heat-cell.level-3 { background: #5f9bd3; }
-.stt-heat-cell.level-4 { background: #2f6ea7; }
+.stt-heat-cell.level-0 { background: var(--color-heatmap-0); }
+.stt-heat-cell.level-1 { background: var(--color-heatmap-1); }
+.stt-heat-cell.level-2 { background: var(--color-heatmap-2); }
+.stt-heat-cell.level-3 { background: var(--color-heatmap-3); }
+.stt-heat-cell.level-4 { background: var(--color-heatmap-4); }
 
 .stt-heat-cell.out-range {
   opacity: 0.2;
@@ -771,7 +810,7 @@ pointer-events: none;
 /* En pause : afficher le menu pause centré */
 .game-container.playing.paused .menus-overlay {
   display: flex !important;
-  background: #dfedfdcc;
+  background: var(--color-bg-panel);
 }
 
 .game-container.playing.paused .panel-content {

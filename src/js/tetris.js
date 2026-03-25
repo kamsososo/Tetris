@@ -11,12 +11,13 @@
    - Menus : Accueil, Pause, Options, Statistiques (STT)
    ======================================== */
 
-// Les constantes CONFIG, COLORS, TETROMINOS, DEFAULT_OPTIONS et KEY_NAMES sont dans js/config.js
 
-// ===========================================
-// ÉTAT DU JEU
-// ===========================================
 
+// -----------------------------------------------------
+// === ÉTAT DU JEU ===
+// Variables dynamiques représentant l'état courant
+
+// Variables d'état dynamique (centralisées ici)
 let canvas, ctx, nextCanvas, nextCtx;
 let arena = [];
 let currentPiece = null;
@@ -37,7 +38,6 @@ let gameStats = {
   startLevel: 1
 };
 
-const GLOBAL_STATS_STORAGE_KEY = 'tetrisGlobalStats';
 let globalStats = getDefaultGlobalStats();
 let gameStatsCommitted = false;
 let currentHeatmapYear = new Date().getFullYear();
@@ -51,34 +51,32 @@ let currentMenu = 'accueil'; // 'accueil', 'pause', 'options', 'STT'
 let previousMenu = null;
 let waitingForKey = null; // Action en attente de nouvelle touche
 
-// Timing pour la chute
+
+// -----------------------------------------------------
+// === TIMING ===
+// Gestion du temps pour la chute automatique des pièces
 let dropCounter = 0;
 let lastTime = 0;
 
-// Auto-répétition (DAS/ARR)
+// -----------------------------------------------------
+// === AUTO-RÉPÉTITION (DAS/ARR) ===
+// Gestion du maintien des touches pour déplacement fluide
 let keysPressed = {};
 let dasTimers = {};
 let arrIntervals = {};
 
-// Animation de clignotement des lignes
+// -----------------------------------------------------
+// === ANIMATION LIGNES ===
+// Gestion du clignotement lors de l'effacement de lignes
 let flashingRows = [];           // Indices des lignes qui clignotent
 let flashPhase = false;          // true = blanc, false = couleur normale
 let linesClearingAnimation = false; // true = animation en cours
 
-// Audio
-let audioMuted = false;
 
-// Themes
-const THEME_STORAGE_KEY = 'tetrisTheme';
-const THEME_NONE_VALUE = '__none__';
-const THEME_NONE_LABEL = 'AUCUN';
-const THEME_BACKGROUND_CANDIDATES = ['background.png', 'background.jpeg'];
-const THEME_LOGO_CANDIDATES = ['theme_LOGO.png', 'theme_LOGO.jpeg'];
-let selectedThemeName = null;
-let defaultLogoSrc = 'img/LOGO.png';
-let lastTetrisBackgroundPath = null;
-const themeImageCheckCache = new Map();
-const themeCanvasAssetsCache = new Map();
+// -----------------------------------------------------
+// === AUDIO ===
+// État du son global
+let audioMuted = false;
 
 function setStatsValuesVisible(visible) {
   document.querySelectorAll('.stat-value').forEach(el => {
@@ -111,6 +109,12 @@ function startMusic() {
 // THEMES
 // ===========================================
 
+let selectedThemeName = null;
+let defaultLogoSrc = 'assets/img/LOGO.png';
+let lastTetrisBackgroundPath = null;
+const themeImageCheckCache = new Map();
+const themeCanvasAssetsCache = new Map();
+
 function getThemeNames() {
   if (!THEME_ASSETS || typeof THEME_ASSETS !== 'object') return [];
   return Object.keys(THEME_ASSETS);
@@ -129,10 +133,6 @@ function getThemeFiles(themeName) {
   return Array.isArray(files) ? files : [];
 }
 
-function normalizeThemeAssetName(fileName) {
-  return String(fileName || '').trim().toLowerCase();
-}
-
 function isExcludedCanvasThemeAsset(fileName) {
   const normalized = normalizeThemeAssetName(fileName);
   return (
@@ -146,7 +146,7 @@ function isExcludedCanvasThemeAsset(fileName) {
 }
 
 function getThemeAssetPath(themeName, fileName) {
-  return `img/theme/${themeName}/${fileName}`;
+  return `assets/img/theme/${themeName}/${fileName}`;
 }
 
 function getThemeAssetUrl(path) {
@@ -397,14 +397,30 @@ function initThemeSystem() {
 // FONCTIONS UTILITAIRES
 // ===========================================
 
+/**
+ * Génère un entier aléatoire entre min et max inclus
+ */
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+/**
+ * Formate un nombre avec séparateur de milliers
+ */
 function formatNumber(num) {
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
+/**
+ * Normalise un nom de fichier d'asset thème
+ */
+function normalizeThemeAssetName(fileName) {
+  return String(fileName || '').trim().toLowerCase();
+}
+
+/**
+ * Obtient le nom lisible d'une touche
+ */
 function getKeyDisplayName(key) {
   return KEY_NAMES[key] || (key.length === 1 ? key.toUpperCase() : key);
 }
@@ -580,7 +596,7 @@ function getLocalDateKey(date = new Date()) {
 }
 
 function formatDateDDMM(dateKey) {
-  const [_, month, day] = dateKey.split('-');
+  const [year, month, day] = dateKey.split('-');
   return `${day}/${month}`;
 }
 
@@ -711,7 +727,7 @@ function renderHeatmapForYear(year) {
   heatmapGrid.style.setProperty('--stt-weeks', String(weeksCount));
   
   const daysData = globalStats.daysPlayed || {};
-  const monthNames = ['jan', 'fev', 'mar', 'avr', 'mai', 'jun', 'jul', 'aou', 'sep', 'oct', 'nov', 'dec'];
+  const monthNames = ['jan', 'fév', 'mar', 'avr', 'mai', 'jun', 'jul', 'aou', 'sep', 'oct', 'nov', 'dec'];
   
   let lastMonthLabel = '';
   for (let week = 0; week < weeksCount; week++) {
@@ -757,7 +773,7 @@ function renderHeatmapForYear(year) {
         tooltip.textContent = message;
       });
       cell.addEventListener('mouseleave', () => {
-        tooltip.textContent = 'survole une case pour voir le detail';
+        tooltip.textContent = 'survole une case pour voir les détails';
       });
       
       heatmapGrid.appendChild(cell);
@@ -1103,7 +1119,7 @@ function updateScore(linesCleared) {
 // RENDU GRAPHIQUE
 // ===========================================
 
-// Pattern de fond rayé (créé une seule fois)
+
 
 function isCellOccupied(boardCol, boardRow, matrix, offsetX, offsetY) {
   if (matrix) {
@@ -1163,7 +1179,7 @@ function draw() {
         if (flashingRows.includes(row) && flashPhase) {
           drawCell(ctx, col, row, '#FFFFFF', neighbors);
         } else {
-          drawCell(ctx, col, row, COLORS[cellType], neighbors);
+          drawCell(ctx, col, row, getTetrominoColor(cellType), neighbors);
         }
       }
     }
@@ -1171,7 +1187,7 @@ function draw() {
   
   // Pièce actuelle
   if (drawActivePiece) {
-    drawPiece(ctx, currentPiece.matrix, currentPiece.col, currentPiece.row, COLORS[currentPiece.name]);
+    drawPiece(ctx, currentPiece.matrix, currentPiece.col, currentPiece.row, getTetrominoColor(currentPiece.name));
   }
 
   ctx.restore();
@@ -1190,7 +1206,7 @@ function drawArenaWithOffsets(rowOffsets) {
       if (arena[row][col]) {
         const cellType = arena[row][col];
         const neighbors = getCellNeighbors(col, row);
-        drawCell(ctx, col, row, COLORS[cellType], neighbors, rowOffsets[row] || 0);
+        drawCell(ctx, col, row, getTetrominoColor(cellType), neighbors, rowOffsets[row] || 0);
       }
     }
   }
@@ -1326,7 +1342,7 @@ function drawNextPiece() {
   nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
   
   const matrix = nextPiece.matrix;
-  const color = COLORS[nextPiece.name];
+  const color = getTetrominoColor(nextPiece.name);
   
   // Calculer les dimensions réelles de la pièce (sans lignes/colonnes vides)
   let minRow = matrix.length, maxRow = 0, minCol = matrix[0].length, maxCol = 0;
@@ -1512,7 +1528,7 @@ function triggerGameOver() {
     cancelAnimationFrame(animationId);
   }
   
-  //saveHighScore(gameStats.score);
+  // (high scores gérés via statistiques globales)
   commitCurrentGameToGlobalStats();
   playSound('gameOver');
   
@@ -1763,7 +1779,7 @@ function initEventListeners() {
       audioMuted = !audioMuted;
     }
     const icon = document.getElementById('sound-icon');
-    icon.src = audioMuted ? 'img/icons/mute.png' : 'img/icons/volume.png';
+    icon.src = audioMuted ? 'assets/img/icons/mute.png' : 'assets/img/icons/volume.png';
     document.getElementById('sound-toggle').classList.toggle('muted', audioMuted);
   });
   
@@ -1778,7 +1794,6 @@ function initEventListeners() {
 
 function init() {
   canvas = document.getElementById('tetris');
-  ctx = canvas.getContext('2d');
 
   arenaLogicalWidth = canvas.width;
   arenaLogicalHeight = canvas.height;
@@ -1794,8 +1809,20 @@ function init() {
   loadGlobalStats();
   syncAudioSettings();
   if (typeof audioManager !== 'undefined') {
-    audioManager.loadSounds().catch(() => {
-      console.warn('Chargement audio incomplet.');
+    audioManager.loadSounds().catch((error) => {
+      let details = '';
+      if (error) {
+        if (Array.isArray(error.failedFiles) && error.failedFiles.length > 0) {
+          details = ' Erreur pour le(s) fichier(s) audio suivant(s) : ' + error.failedFiles.join(', ') + '.';
+        } else if (typeof error.message === 'string' && error.message.trim() !== '') {
+          details = ' Détails : ' + error.message;
+        }
+      }
+      console.warn(
+        'Chargement audio incomplet. Certains sons peuvent ne pas être disponibles.' +
+        ' Vérifiez votre connexion, la compatibilité du navigateur ou les paramètres audio.' +
+        details
+      );
     });
   }
   createArena();

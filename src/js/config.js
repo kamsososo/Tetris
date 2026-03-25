@@ -1,8 +1,18 @@
-/* ========================================
-   TETRIS - Configuration du jeu
-   Contient toutes les constantes et paramètres
-   ======================================== */
+/* =====================================================
+  TETRIS - Configuration du jeu
+  Ce fichier centralise toutes les constantes, paramètres
+  et fonctions utilitaires globales utilisées dans le projet.
+  Modifiez ici pour changer les règles, couleurs, contrôles, etc.
+  ===================================================== */
 
+// -----------------------------------------------------
+// === CONFIGURATION PRINCIPALE DU JEU ===
+
+// === CLÉS DE STOCKAGE LOCAL ===
+// Clé de stockage des statistiques globales dans localStorage
+const GLOBAL_STATS_STORAGE_KEY = 'tetris_global_stats';
+
+// Dimensions, niveaux, scores, vitesse, etc.
 const CONFIG = {
   // === DIMENSIONS DU TERRAIN ===
   ARENA_WIDTH: 10,      // Largeur en cellules
@@ -31,7 +41,9 @@ const CONFIG = {
   }
 };
 
+// -----------------------------------------------------
 // === COULEURS DES TÉTROMINOS ===
+// Couleurs principales des pièces (synchronisées avec CSS)
 const COLORS = {
   'I': '#ff6600', // Orange
   'O': '#ff0000', // Rouge
@@ -42,7 +54,42 @@ const COLORS = {
   'L': '#0000ff'  // Bleu
 };
 
+/**
+ * Cache des couleurs des tétriminos calculées à partir des variables CSS.
+ * Permet d'éviter d'appeler getComputedStyle à chaque rendu.
+ */
+let tetrominoColorCache = null;
+
+/**
+ * Initialise le cache des couleurs des tétriminos à partir des variables CSS.
+ * Appelé à la première utilisation de getTetrominoColor.
+ */
+function initTetrominoColorCache() {
+  const styles = getComputedStyle(document.documentElement);
+  tetrominoColorCache = {};
+  Object.keys(COLORS).forEach((type) => {
+    const cssVar = `--color-tetromino-${type}`;
+    const fromCss = styles.getPropertyValue(cssVar);
+    tetrominoColorCache[type] = (fromCss && fromCss.trim()) || COLORS[type] || '#888';
+  });
+}
+
+/**
+ * Retourne la couleur CSS d'un tétrimino (via variable CSS si dispo, sinon fallback JS)
+ * Utilisé pour garantir la cohérence visuelle entre JS et CSS.
+ * @param {string} type - Lettre du tétrimino (I, O, T, S, Z, J, L)
+ * @returns {string} Couleur CSS
+ */
+function getTetrominoColor(type) {
+  if (!tetrominoColorCache) {
+    initTetrominoColorCache();
+  }
+  return tetrominoColorCache[type] || COLORS[type] || '#888';
+}
+
+// -----------------------------------------------------
 // === FORMES DES TÉTROMINOS ===
+// Matrices de forme pour chaque type de pièce
 const TETROMINOS = {
   'I': [
     [0, 0, 0, 0],
@@ -81,7 +128,9 @@ const TETROMINOS = {
   ]
 };
 
+// -----------------------------------------------------
 // === OPTIONS PAR DÉFAUT ===
+// Touches, volumes, paramètres utilisateur par défaut
 const DEFAULT_OPTIONS = {
   // Touches de contrôle
   keys: {
@@ -93,8 +142,8 @@ const DEFAULT_OPTIONS = {
   },
   
   // Auto-répétition (DAS = Delayed Auto Shift, ARR = Auto Repeat Rate)
-  dasDelay: 50,    // Délai avant répétition (ms)
-  arrSpeed: 50,     // Vitesse de répétition (ms)
+  dasDelay: 60,    // Délai avant répétition (ms)
+  arrSpeed: 60,     // Vitesse de répétition (ms)
   
   // Audio
   sfxVolume: 50,    // Volume effets (0-100)
@@ -102,7 +151,9 @@ const DEFAULT_OPTIONS = {
   musicType: 1      // Type de musique (1-3)
 };
 
+// -----------------------------------------------------
 // === NOMS DES TOUCHES (pour affichage) ===
+// Mapping pour affichage lisible des touches
 const KEY_NAMES = {
   'ArrowLeft': 'FLÈCHE GAUCHE',
   'ArrowRight': 'FLÈCHE DROITE',
@@ -116,7 +167,15 @@ const KEY_NAMES = {
   'Alt': 'ALT'
 };
 
-// === THEMES ===
+// ------------------------------------------------------
+// === CONSTANTES POUR LES THÈMES ===
+// Gestion du thème graphique et des assets
+const THEME_STORAGE_KEY = 'tetrisTheme';
+const THEME_NONE_VALUE = '__none__';
+const THEME_NONE_LABEL = 'aucun';
+const THEME_BACKGROUND_CANDIDATES = ['background.png', 'background.jpeg'];
+const THEME_LOGO_CANDIDATES = ['theme_LOGO.jpeg', 'theme_LOGO.png'];
+
 // Source de vérité explicite des dossiers de thèmes et des assets connus.
 // En navigateur, on ne peut pas lister les fichiers d'un dossier sans backend.
 const THEME_ASSETS = {
@@ -141,16 +200,3 @@ const THEME_ASSETS = {
   ]
 };
 
-/**
- * Obtient le nom lisible d'une touche
- */
-function getKeyDisplayName(key) {
-  if (KEY_NAMES[key]) {
-    return KEY_NAMES[key];
-  }
-  // Pour les lettres et chiffres, retourner en majuscules
-  if (key.length === 1) {
-    return key.toUpperCase();
-  }
-  return key.toUpperCase();
-}
